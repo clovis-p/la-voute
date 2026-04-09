@@ -67,3 +67,5 @@ Arrêter et supprimer le volume de la base de données:
 ```bash
 docker compose -f docker-compose.prod.yml down -v
 ```
+## Guide de migration
+Disponible dans "resources/db/changelog/MIGRATION.md"
