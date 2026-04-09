@@ -13,14 +13,14 @@ La date dans le format spécifié est obligatoire cependant, tant que la descrip
 Le format de la description n'est qu'une suggestion.
 - Syntaxe
 ``
-YYYYMMDD_ACTION_NAME_TABLE.sql
+YYYYMMDDHHmm_ACTION_NAME_TABLE.sql
 `` <br/>
-- Example
+- Example <br/>
 ``
-create_user_table.sql
+202604091621_create_user_table.sql
 ``
 ``
-add_email_column_on_user_table.sql
+202604092014_add_email_column_on_user_table.sql
 ``
 2. **La syntaxe du fichier sql** <br/>
 ```sql
@@ -29,8 +29,9 @@ add_email_column_on_user_table.sql
 --changeset auteur:YYYYMMDDHHMM_file_name
 /* du code sql */
 
-/* un nième changeset ou non */
+--rollback /* code sql qui inverse le changeset */
 ```
+
 Pour un example voir *20260408_create_users_table.sql*
 
 3. **Redémarrez Spring Boot**
@@ -39,8 +40,9 @@ Pour un example voir *20260408_create_users_table.sql*
 1. Créer une classe java dans **"src/main/java/xyz/lavoute/web/models"** <br/>
 
 Checklist pour que le modèle soit accepté
-- le modèle a un attribut id Long (le wrapper class Long) avec une annotation <br/>
+- le modèle a un attribut id int avec une annotation <br/>
 @Id et @GeneratedValue(strategy = GenerationType.IDENTITY)
 - Annotation @Entity
+- Annotation @NoArgsConstructor (ou un constructeur vide)
 - Annotation @Table(name="example") <br/>
 (non obligatoire si le nom de la table est la même que le modèle)
