@@ -31,9 +31,9 @@ public class File {
     @JoinColumn(name = "parent_dir_id")
     private File parentDir;
 
-/*    @ManyToOne
+    @ManyToOne
     @JoinColumn(name = "type_id")
-    private FileType type; */
+    private FileType type;
 
     public File(String path, String name, Boolean isDirectory, Boolean isLocked, User user, File parentDir) {
         this.path = path;
