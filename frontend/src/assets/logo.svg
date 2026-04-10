@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="100"
+   height="100"
+   viewBox="0 0 26.458332 26.458333"
+   version="1.1"
+   id="svg1"
+   sodipodi:docname="logo6.svg"
+   inkscape:version="1.4.3 (0d15f75042, 2025-12-25)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     inkscape:zoom="6.4470836"
+     inkscape:cx="48.238866"
+     inkscape:cy="57.312736"
+     inkscape:window-width="3416"
+     inkscape:window-height="1378"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="g174" />
+  <defs
+     id="defs1">
+    <inkscape:perspective
+       sodipodi:type="inkscape:persp3d"
+       inkscape:vp_x="-14.647523 : -4.0335552 : 1"
+       inkscape:vp_y="0 : 4462.2416 : 0"
+       inkscape:vp_z="61.723244 : -4.0335552 : 1"
+       inkscape:persp3d-origin="23.537862 : -23.7108 : 1"
+       id="perspective137" />
+    <inkscape:perspective
+       sodipodi:type="inkscape:persp3d"
+       inkscape:vp_x="-30.769384 : 1.3240061 : 1"
+       inkscape:vp_y="0 : 1982.0902 : 0"
+       inkscape:vp_z="-4.5024422 : 0.37879291 : 1"
+       inkscape:persp3d-origin="-5.0799415 : -7.4164599 : 1"
+       id="perspective17" />
+  </defs>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <g
+       id="g174"
+       transform="matrix(7.7307453,0,0,9.0908354,-80.598327,-125.92376)"
+       style="fill:#000000;fill-opacity:1">
+      <path
+         id="text173"
+         style="font-size:3.175px;writing-mode:lr-tb;direction:ltr;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke-width:0.264583"
+         d="M 11.174956 14.413179 C 11.117806 14.413179 11.08926 14.4354 11.08926 14.476675 C 11.08926 14.521125 11.117806 14.543353 11.174956 14.543353 L 11.422484 14.543353 L 11.479771 14.543353 L 11.479771 16.070539 L 11.174956 16.070539 C 11.117806 16.070539 11.08926 16.092759 11.08926 16.134034 C 11.08926 16.178484 11.117806 16.200713 11.174956 16.200713 L 12.155911 16.200713 L 12.336862 16.200713 L 12.606917 16.200713 L 12.606917 15.562519 C 12.606917 15.551425 12.606095 15.541389 12.604444 15.532448 C 12.60444 15.532429 12.604447 15.532411 12.604444 15.532391 L 13.000435 14.543353 L 13.098899 14.543353 C 13.156049 14.543353 13.184594 14.521125 13.184594 14.476675 C 13.184594 14.432225 13.156049 14.413179 13.098899 14.413179 L 12.622626 14.413179 C 12.562301 14.413179 12.536863 14.4354 12.536863 14.476675 C 12.536863 14.521125 12.565476 14.543353 12.622626 14.543353 L 12.870288 14.543353 L 12.257516 16.070539 L 12.247957 16.070539 L 11.657446 14.543353 L 11.901899 14.543353 L 11.914733 14.543353 C 11.971883 14.543353 12.000496 14.521125 12.000496 14.476675 C 12.000496 14.4354 11.971883 14.413179 11.914733 14.413179 L 11.901899 14.413179 L 11.422484 14.413179 L 11.174956 14.413179 z M 11.609985 14.775904 L 12.106045 16.070539 L 11.609985 16.070539 L 11.609985 14.775904 z M 12.476769 15.851289 L 12.476769 16.070539 L 12.389001 16.070539 L 12.476769 15.851289 z " />
+    </g>
+  </g>
+</svg>
