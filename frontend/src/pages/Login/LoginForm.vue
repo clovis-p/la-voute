@@ -15,7 +15,7 @@
         <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between w-full gap-3 sm:gap-0">
           <div class="flex items-center gap-2">
             <Checkbox id="rememberme1" v-model="checked1" :binary="true" />
-            <label for="rememberme1" class="text-surface-900 dark:text-surface-0 leading-normal">Remember me</label>
+            <label for="rememberme1" class="text-surface-900 dark:text-surface-0 leading-normal">Se souvenir de moi</label>
           </div>
         </div>
       </div>

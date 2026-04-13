@@ -13,7 +13,7 @@
           <Password id="password1" v-model="password" placeholder="Mot de passe" :toggleMask="true" :feedback="false" input-class="w-full!" />
         </div>
         <div class="flex flex-col gap-2 w-full">
-          <Password id="password2" v-model="confirmPassword" placeholder="Mot de passe" :toggleMask="true" :feedback="false" input-class="w-full!" />
+          <Password id="password2" v-model="confirmPassword" placeholder="Confirmer le mot de passe" :toggleMask="true" :feedback="false" input-class="w-full!" />
         </div>
       </div>
       <Button label="S'inscrire" icon="pi pi-user" class="w-full py-2 rounded-lg flex justify-center items-center gap-2">
