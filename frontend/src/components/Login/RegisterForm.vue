@@ -26,10 +26,10 @@
 </template>
 
 <script setup>
-import AppLogo from '@/components/AppLogo.vue';
 import Button from 'primevue/button';
 import InputText from 'primevue/inputtext';
 import Password from 'primevue/password';
+import AppLogo from '@/assets/logo.svg';
 
 import { ref } from 'vue';
 
