@@ -18,7 +18,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-//TODO documenter l'api sur comment fonctionne le /register
 @RestController
 @CrossOrigin
 public class HomeController {
@@ -32,15 +31,15 @@ public class HomeController {
         this.userDTOMapper = new UserDTOMapper();
         this.userRepository = userRepository;
         this.encoder = new BCryptPasswordEncoder();
-        this.userValidator= new UserValidator();
+        this.userValidator = new UserValidator();
     }
 
     private static final List<String> SUBTITLES = List.of(
-        "Votre IRL Ender Chest",
-        "Rangez. Retrouvez. Respirez.",
-        "Le désordre, c'est fini.",
-        "Tout à sa place, toujours.",
-        "Votre mémoire physique."
+            "Votre IRL Ender Chest",
+            "Rangez. Retrouvez. Respirez.",
+            "Le désordre, c'est fini.",
+            "Tout à sa place, toujours.",
+            "Votre mémoire physique."
     );
 
     private final Random random = new Random();
@@ -51,6 +50,13 @@ public class HomeController {
         return Map.of("titleMessage", "Bienvenue dans La Voûte!", "subtitleMessage", subtitle);
     }
 
+    /**
+     * Registering a new user in the database while validating their information and encrypting their password
+     *
+     * @param userDto the user to save
+     * @return the HTTPStatus "Created" (201) if the information were valid
+     * @throws UserInvalidInformationsException with the error message when some informations are not valid
+     */
     @PostMapping("/register")
     public ResponseEntity<Integer> registerNewUser(@RequestBody UserDTO userDto) {
         logger.info("Registering new user" + userDto.getFirstName() + " " + userDto.getLastName());
@@ -68,7 +74,6 @@ public class HomeController {
         }
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
-
 
     @ExceptionHandler(UserInvalidInformationsException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
