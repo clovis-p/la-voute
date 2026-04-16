@@ -21,6 +21,7 @@ import java.util.Random;
 //TODO documenter l'api sur comment fonctionne le /register
 @RestController
 @CrossOrigin
+@RequestMapping("/api")
 public class HomeController {
     private final Logger logger = LoggerFactory.getLogger(HomeController.class);
     private final UserValidator userValidator;
@@ -45,7 +46,7 @@ public class HomeController {
 
     private final Random random = new Random();
 
-    @GetMapping("/api/home")
+    @GetMapping("/home")
     public Map<String, String> home() {
         String subtitle = SUBTITLES.get(random.nextInt(SUBTITLES.size()));
         return Map.of("titleMessage", "Bienvenue dans La Voûte!", "subtitleMessage", subtitle);
@@ -57,6 +58,7 @@ public class HomeController {
         int id = -1;
         String errorMessage = userValidator.validateUser(userDto);
 
+        // TODO a deplacer ca dans un service
         if (errorMessage.isEmpty()) {
             User user = userDTOMapper.toUser(userDto);
             user.setPassword(encoder.encode(user.getPassword()));
