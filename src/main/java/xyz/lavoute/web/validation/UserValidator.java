@@ -1,7 +1,7 @@
 package xyz.lavoute.web.validation;
 
 import org.springframework.stereotype.Component;
-import xyz.lavoute.web.dto.UserDTO;
+import xyz.lavoute.web.dto.RegistrationRequestDTO;
 import xyz.lavoute.web.exceptions.UserInvalidInformationsException;
 
 @Component
@@ -14,7 +14,7 @@ public class UserValidator {
      * @return an error message adapted to the errors // empty if no errors
      * @throws UserInvalidInformationsException throws and exception if the informations are null
      */
-    public String validateUser(UserDTO user) {
+    public String validateUser(RegistrationRequestDTO user) {
         String returnMessage = "";
 
         if (user.getFirstName() == null || user.getLastName() == null || user.getUsername() == null || user.getPassword() == null) {

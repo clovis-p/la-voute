@@ -5,11 +5,11 @@ import xyz.lavoute.web.models.User;
 
 @Component
 public class UserDTOMapper {
-    public UserDTO toDTO(User user) {
-        return new UserDTO(user);
+    public RegistrationRequestDTO toDTO(User user) {
+        return new RegistrationRequestDTO(user);
     }
 
-    public User toUser(UserDTO userDTO) {
-        return new User(userDTO.getUsername(), userDTO.getFirstName(), userDTO.getLastName(), userDTO.getPassword());
+    public User toUser(RegistrationRequestDTO registrationRequestDTO) {
+        return new User(registrationRequestDTO.getUsername(), registrationRequestDTO.getFirstName(), registrationRequestDTO.getLastName(), registrationRequestDTO.getPassword());
     }
 }

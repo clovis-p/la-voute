@@ -2,7 +2,7 @@ package xyz.lavoute.web.validation;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import xyz.lavoute.web.dto.UserDTO;
+import xyz.lavoute.web.dto.RegistrationRequestDTO;
 import xyz.lavoute.web.exceptions.UserInvalidInformationsException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -11,12 +11,12 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class UserValidatorTest {
 
     private UserValidator userValidator;
-    UserDTO user;
+    RegistrationRequestDTO user;
 
     @BeforeEach
     public void setUp() {
         userValidator = new UserValidator();
-        user = new UserDTO();
+        user = new RegistrationRequestDTO();
         user.setUsername("username");
         user.setFirstName("firstName");
         user.setLastName("lastName");
