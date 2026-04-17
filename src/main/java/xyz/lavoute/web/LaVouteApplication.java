@@ -14,6 +14,7 @@ public class LaVouteApplication {
         SpringApplication.run(LaVouteApplication.class, args);
     }
 
+    /*
     @Bean
     public CommandLineRunner runner(UserRepository repository, PasswordEncoder encoder) {
         return args -> {
@@ -24,4 +25,5 @@ public class LaVouteApplication {
             repository.save(user);
         };
     }
+     */
 }
