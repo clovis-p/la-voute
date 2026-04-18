@@ -12,30 +12,34 @@
         <div class="flex flex-col gap-2 w-full">
           <Password id="password1" v-model="password" placeholder="Mot de passe" :toggleMask="true" :feedback="false" input-class="w-full!" />
         </div>
-        <div class="flex flex-col gap-2 w-full">
-          <Password id="password2" v-model="confirmPassword" placeholder="Mot de passe" :toggleMask="true" :feedback="false" input-class="w-full!" />
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between w-full gap-3 sm:gap-0">
+          <div class="flex items-center gap-2">
+            <Checkbox id="rememberme1" v-model="checked1" :binary="true" />
+            <label for="rememberme1" class="text-surface-900 dark:text-surface-0 leading-normal">Se souvenir de moi</label>
+          </div>
         </div>
       </div>
-      <Button label="S'inscrire" icon="pi pi-user" class="w-full py-2 rounded-lg flex justify-center items-center gap-2">
+      <Button label="Se connecter" icon="pi pi-user" class="w-full py-2 rounded-lg flex justify-center items-center gap-2">
         <template #icon>
           <i class="pi pi-user text-base! leading-normal!" />
         </template>
       </Button>
-    <Button label="< Retour" icon="pi pi-user" severity="secondary" class="w-full py-2 rounded-lg flex justify-center items-center gap-2" @click="emit('switch-to-login')" />
+    <Button label="Créer un compte" icon="pi pi-user" severity="secondary" class="w-full py-2 rounded-lg flex justify-center items-center gap-2" @click="emit('switch-to-register')" />
   </div>
 </template>
 
 <script setup>
-import AppLogo from '@/components/AppLogo.vue';
 import Button from 'primevue/button';
+import Checkbox from 'primevue/checkbox';
 import InputText from 'primevue/inputtext';
 import Password from 'primevue/password';
+import AppLogo from '@/assets/logo.svg';
 
 import { ref } from 'vue';
 
 defineProps(['title', 'subtitle']);
-const emit = defineEmits(['switch-to-login']);
+const emit = defineEmits(['switch-to-register']);
 
 const password = ref('');
-const confirmPassword = ref('');
+const checked1 = ref(true);
 </script>
