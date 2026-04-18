@@ -1,11 +1,12 @@
 import { createApp } from 'vue';
 import './style.css';
-import Home from './pages/Home.vue';
+import App from './App.vue';
 import PrimeVue from 'primevue/config';
 import Aura from '@primeuix/themes/aura';
 import {definePreset} from "@primeuix/themes";
+import router from './router.js';
 
-const app = createApp(Home);
+const app = createApp(App);
 
 const customPreset = definePreset(Aura, {
     semantic: {
@@ -30,4 +31,5 @@ app.use(PrimeVue, {
         preset: customPreset
     }
 });
+app.use(router);
 app.mount('#app');
