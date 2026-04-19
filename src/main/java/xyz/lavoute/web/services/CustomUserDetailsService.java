@@ -20,6 +20,10 @@ public class CustomUserDetailsService implements UserDetailsService {
         Optional<User> retrievedUser = userService.getUserByUsername(username);
 
         if (retrievedUser.isEmpty()) {
+            if (username.isBlank()) {
+                username = "[empty_username]";
+            }
+
             String msg = "User with the name: " + username + " does not match any user in the database";
             throw new UsernameNotFoundException(msg);
         }
