@@ -1,17 +1,13 @@
 package xyz.lavoute.web.controller;
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.http.HttpRequest;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.*;
 
-import javax.swing.*;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
 @RestController
-@CrossOrigin
+@CrossOrigin // TODO Add specific domain for production
 @RequestMapping("/api")
 public class HomeController {
 
