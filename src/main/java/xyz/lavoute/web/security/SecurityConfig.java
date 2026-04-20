@@ -33,7 +33,7 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/home",
                                 "/api/csrf",
-                                "/user/register"
+                                "/api/user/register"
                         )
                         .permitAll()
                         .anyRequest()

@@ -16,7 +16,7 @@ import xyz.lavoute.web.validation.UserValidator;
 
 @RestController
 @CrossOrigin
-@RequestMapping("/user")
+@RequestMapping("/api/user")
 public class UserController {
     private final Logger logger = LoggerFactory.getLogger(HomeController.class);
 
