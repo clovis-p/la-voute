@@ -38,7 +38,7 @@ public class UserController {
      * @return the HTTPStatus "Created" (201) if the information were valid
      * @throws UserInvalidInformationsException with the error message when some informations are not valid
      */
-    @PostMapping("/register")
+    @PostMapping("/api/register")
     public ResponseEntity<Integer> registerNewUser(@RequestBody RegistrationRequestDTO registrationRequestDto) {
         logger.info("Registering new user" + registrationRequestDto.getFirstName() + " " + registrationRequestDto.getLastName());
         String errorMessage = userValidator.validateUser(registrationRequestDto);
