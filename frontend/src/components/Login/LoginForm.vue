@@ -5,6 +5,7 @@
           <AppLogo class="h-20 w-20" />
         </div>
       </div>
+      <p v-if="registered" class="text-green-600 text-sm text-center">Compte créé avec succès ! Vous pouvez maintenant vous connecter.</p>
       <div class="flex flex-col gap-6 w-full">
         <div class="flex flex-col gap-2 w-full">
           <InputText id="email1" type="text" placeholder="Nom d'utilisateur" class="w-full px-3 py-2 shadow-sm rounded-lg" />
@@ -37,7 +38,7 @@ import AppLogo from '@/assets/logo.svg';
 
 import { ref } from 'vue';
 
-defineProps(['title', 'subtitle']);
+defineProps(['title', 'subtitle', 'registered']);
 const emit = defineEmits(['switch-to-register']);
 
 const password = ref('');
