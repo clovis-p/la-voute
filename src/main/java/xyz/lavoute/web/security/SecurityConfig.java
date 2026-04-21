@@ -13,7 +13,7 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) {
         http.csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/register").permitAll() //Ajouter le /login pour autorisé le endpoint lorsque l'utilisateur n'est pas connecté
+                        .requestMatchers("/register", "/upload").permitAll() //Ajouter le /login pour autorisé le endpoint lorsque l'utilisateur n'est pas connecté
                         .anyRequest().authenticated());
         return http.build();
     }
