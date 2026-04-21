@@ -26,7 +26,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                         .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
-                        .ignoringRequestMatchers("/api/user/register")
+                        .ignoringRequestMatchers("/api/user/register", "/api/files/upload")
                 )
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
@@ -35,7 +35,8 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/home",
                                 "/api/csrf",
-                                "/api/user/register"
+                                "/api/user/register",
+                                "/api/files/upload"
                         )
                         .permitAll()
                         .anyRequest()

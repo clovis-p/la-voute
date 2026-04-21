@@ -22,8 +22,8 @@ public class FileController {
     }
 
     @PostMapping("/upload")
-    public ResponseEntity<Integer> uploadNewFile(@RequestParam("file") MultipartFile file, @RequestParam User user) {
-        fileService.uploadFile(file);
+    public ResponseEntity<Integer> uploadNewFile(@RequestParam("file") MultipartFile file, @RequestParam("userId") int userId, @RequestParam("isDirectory") boolean isDirectory) {
+        fileService.uploadFile(file, userId, isDirectory);
         return ResponseEntity.status(HttpStatus.ACCEPTED).build();
     }
 }
