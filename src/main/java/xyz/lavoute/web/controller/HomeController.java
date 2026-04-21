@@ -1,4 +1,5 @@
 package xyz.lavoute.web.controller;
+import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -6,7 +7,8 @@ import java.util.Map;
 import java.util.Random;
 
 @RestController
-@CrossOrigin
+@CrossOrigin // TODO Add specific domain for production
+@RequestMapping("/api")
 public class HomeController {
 
     private static final List<String> SUBTITLES = List.of(
@@ -19,9 +21,14 @@ public class HomeController {
 
     private final Random random = new Random();
 
-    @GetMapping("/api/home")
+    @GetMapping("/home")
     public Map<String, String> home() {
         String subtitle = SUBTITLES.get(random.nextInt(SUBTITLES.size()));
         return Map.of("titleMessage", "Bienvenue dans La Voûte!", "subtitleMessage", subtitle);
+    }
+
+    @GetMapping("/csrf")
+    public void getCsrfToken(CsrfToken token) {
+        token.getToken();
     }
 }
