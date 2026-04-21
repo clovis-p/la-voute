@@ -62,7 +62,8 @@ async function handleRegister() {
 
   loading.value = true;
   try {
-    await axios.post('/api/register', {
+    await axios.get('/api/csrf');
+    await axios.post('/api/user/register', {
       firstName: firstName.value,
       lastName: lastName.value,
       username: username.value,
