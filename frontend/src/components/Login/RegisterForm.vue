@@ -7,7 +7,13 @@
       </div>
       <div class="flex flex-col gap-6 w-full">
         <div class="flex flex-col gap-2 w-full">
-          <InputText id="email1" type="text" placeholder="Nom d'utilisateur" class="w-full px-3 py-2 shadow-sm rounded-lg" />
+          <InputText id="first-name" v-model="firstName" type="text" placeholder="Prénom" class="w-full px-3 py-2 shadow-sm rounded-lg" />
+        </div>
+        <div class="flex flex-col gap-2 w-full">
+          <InputText id="last-name" v-model="lastName" type="text" placeholder="Nom" class="w-full px-3 py-2 shadow-sm rounded-lg" />
+        </div>
+        <div class="flex flex-col gap-2 w-full">
+          <InputText id="username" v-model="username" type="text" placeholder="Nom d'utilisateur" class="w-full px-3 py-2 shadow-sm rounded-lg" />
         </div>
         <div class="flex flex-col gap-2 w-full">
           <Password id="password1" v-model="password" placeholder="Mot de passe" :toggleMask="true" :feedback="false" input-class="w-full!" />
@@ -21,7 +27,7 @@
           <i class="pi pi-user text-base! leading-normal!" />
         </template>
       </Button>
-    <Button label="< Retour" icon="pi pi-user" severity="secondary" class="w-full py-2 rounded-lg flex justify-center items-center gap-2" @click="emit('switch-to-login')" />
+    <Button label="Retour" icon="pi pi-user" severity="secondary" class="w-full py-2 rounded-lg flex justify-center items-center gap-2" @click="emit('switch-to-login')" />
   </div>
 </template>
 
@@ -36,6 +42,9 @@ import { ref } from 'vue';
 defineProps(['title', 'subtitle']);
 const emit = defineEmits(['switch-to-login']);
 
+const firstName = ref('');
+const lastName = ref('');
+const username = ref('');
 const password = ref('');
 const confirmPassword = ref('');
 </script>
