@@ -1,35 +1,21 @@
 package xyz.lavoute.web.controller;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import xyz.lavoute.web.dto.RegistrationRequestDTO;
-import xyz.lavoute.web.dto.UserDTOMapper;
 import xyz.lavoute.web.exceptions.Error;
 import xyz.lavoute.web.exceptions.UserInvalidInformationsException;
-import xyz.lavoute.web.models.User;
-import xyz.lavoute.web.repositories.UserRepository;
-import xyz.lavoute.web.validation.UserValidator;
+import xyz.lavoute.web.services.UserService;
 
 @RestController
 @CrossOrigin
 @RequestMapping("/api/user")
 public class UserController {
-    private final Logger logger = LoggerFactory.getLogger(HomeController.class);
+    private final UserService userService;
 
-    private final UserValidator userValidator;
-    private final UserDTOMapper userDTOMapper;
-    private final UserRepository userRepository;
-    private final BCryptPasswordEncoder encoder;
-
-    public UserController(UserValidator userValidator, UserDTOMapper userDTOMapper, UserRepository userRepository) {
-        this.userValidator = userValidator;
-        this.userDTOMapper = userDTOMapper;
-        this.userRepository = userRepository;
-        this.encoder = new BCryptPasswordEncoder();
+    public UserController(UserService userService) {
+    this.userService = userService;
     }
 
     /**
@@ -41,25 +27,14 @@ public class UserController {
      */
     @PostMapping("/register")
     public ResponseEntity<Integer> registerNewUser(@RequestBody RegistrationRequestDTO registrationRequestDto) {
-        logger.info("Registering new user" + registrationRequestDto.getFirstName() + " " + registrationRequestDto.getLastName());
-        String errorMessage = userValidator.validateUser(registrationRequestDto);
-
-        if (errorMessage.isEmpty()) {
-            registrationRequestDto.setPassword(encoder.encode(registrationRequestDto.getPassword()));
-            User user = userDTOMapper.toUser(registrationRequestDto);
-            int id = userRepository.save(user).getId();
-            logger.info("The new user has been registered successfully with the id : " + id);
-        } else {
-            logger.error(errorMessage);
-            throw new UserInvalidInformationsException(errorMessage);
-        }
+        userService.registerUser(registrationRequestDto);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @ExceptionHandler(UserInvalidInformationsException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ResponseBody
-    xyz.lavoute.web.exceptions.Error handleInvalidInformations(UserInvalidInformationsException exception) {
+    Error handleInvalidInformations(UserInvalidInformationsException exception) {
         return new Error(exception.getMessage());
     }
 }
