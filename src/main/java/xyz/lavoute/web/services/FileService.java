@@ -61,7 +61,7 @@ public class FileService {
         String hashedFileName = obtainHashedFileName(fileEntity.getId());
         //Adding the extension to the hashed file name
         String extension = fileEntity.getName().substring(fileEntity.getName().lastIndexOf("."));
-        fileEntity.setPath(hashedFileName + extension);
+        fileEntity.setPath(hashedFileName);
         fileRepository.save(fileEntity);
 
         //Putting the file in the storage
