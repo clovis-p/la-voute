@@ -2,20 +2,34 @@ package xyz.lavoute.web.validation;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import xyz.lavoute.web.dto.RegistrationRequestDTO;
 import xyz.lavoute.web.exceptions.UserInvalidInformationsException;
+import xyz.lavoute.web.models.User;
+import xyz.lavoute.web.repositories.UserRepository;
+
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.when;
 
+@ExtendWith(MockitoExtension.class)
 public class UserValidatorTest {
 
+    @Mock
+    private UserRepository userRepository;
+
+    @InjectMocks
     private UserValidator userValidator;
+
     RegistrationRequestDTO user;
 
     @BeforeEach
     public void setUp() {
-        userValidator = new UserValidator();
         user = new RegistrationRequestDTO();
         user.setUsername("username");
         user.setFirstName("firstName");
@@ -74,6 +88,14 @@ public class UserValidatorTest {
         user.setUsername("TheUsernameIsLongerThan50CharactersAndItWillReturnAnErrorMessage");
         String result = userValidator.validateUser(user);
         assertEquals("Le nom d'utilisateur doit être entre 3 et 50 caractères. \n", result);
+    }
+
+    @Test
+    void shouldReturnAdaptedError_whenUsernameIsAlreadyTaken() {
+        when(userRepository.findUserByUsername("username")).thenReturn(Optional.of(new User("username", "Test", "Test", "Password123!")));
+        String result = userValidator.validateUser(user);
+        assertEquals("Un utilisateur existe déjà avec ce username. \n", result);
+
     }
 
     /**
