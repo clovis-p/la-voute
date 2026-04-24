@@ -58,7 +58,7 @@ public class FileService {
         if (file.getOriginalFilename() == null) {
             throw new StorageException("Impossible d'obtenir le nom du fichier");
         }
-        File fileEntity = new File(storageRoot.toString(), Path.of(file.getOriginalFilename()).getFileName().toString(), false, true, user, parentFile);
+        File fileEntity = new File(storageRoot.toString(), Path.of(file.getOriginalFilename()).getFileName().toString(), false, true, userFound, parentFile);
 
         //Saving in the database to get the id
         fileEntity = fileRepository.save(fileEntity);
