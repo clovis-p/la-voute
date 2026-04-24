@@ -16,6 +16,7 @@ import xyz.lavoute.web.repositories.FileRepository;
 import xyz.lavoute.web.repositories.UserRepository;
 
 import java.io.IOException;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -56,17 +57,17 @@ public class FileServiceTest {
         MockMultipartFile emptyFile = new MockMultipartFile("file", "empty.txt", "text/plain", new byte[0]);
 
         assertThrows(StorageException.class, () ->
-                fileService.uploadFile(emptyFile, mockUser.getId(), mockUser.getId()));
+                fileService.uploadFile(emptyFile, "testuser", mockUser.getId()));
     }
 
     @Test
-    void shouldThrowStorageException_whenUserDoesNotExist() {
+    void shouldThrowStorageException_whenUserDoesNotExistForFiles() {
         MockMultipartFile file = new MockMultipartFile("file", "empty.txt", "text/plain", "empty".getBytes());
 
-        when(userRepository.findUserById(9999)).thenReturn(null);
+        when(userRepository.findUserByUsername("testUser")).thenReturn(Optional.empty());
 
         assertThrows(StorageException.class, () ->
-                fileService.uploadFile(file, 9999, mockParentDir.getId()));
+                fileService.uploadFile(file, "testUser", mockParentDir.getId()));
     }
 
     @Test
@@ -74,10 +75,10 @@ public class FileServiceTest {
         MockMultipartFile file = new MockMultipartFile("file", "empty.txt", "text/plain", "empty".getBytes());
 
         when(fileRepository.findFileById(9999)).thenReturn(null);
-        when(userRepository.findUserById(1)).thenReturn(mockUser);
+        when(userRepository.findUserByUsername("testUser")).thenReturn(Optional.ofNullable(mockUser));
 
         assertThrows(StorageException.class, () ->
-                fileService.uploadFile(file, 1, 9999));
+                fileService.uploadFile(file, "testUser", 9999));
     }
 
     @Test
@@ -85,10 +86,10 @@ public class FileServiceTest {
         MockMultipartFile file = new MockMultipartFile("file", "empty.txt", "text/plain", "empty".getBytes());
 
         when(fileRepository.findFileById(9999)).thenReturn(mockFile);
-        when(userRepository.findUserById(1)).thenReturn(mockUser);
+        when(userRepository.findUserByUsername("testUser")).thenReturn(Optional.ofNullable(mockUser));
 
         assertThrows(StorageException.class, () ->
-                fileService.uploadFile(file, 1, 9999));
+                fileService.uploadFile(file, "testUser", 9999));
     }
 
     @Test
@@ -98,14 +99,14 @@ public class FileServiceTest {
         when(file.getOriginalFilename()).thenReturn("test.png");
         when(file.getInputStream()).thenThrow(new IOException("Simulated IOException"));
 
-        when(userRepository.findUserById(1)).thenReturn(mockUser);
+        when(userRepository.findUserByUsername("testUser")).thenReturn(Optional.ofNullable(mockUser));
 
         File savedFile = new File("storage", "test.png", false, true, mockUser, null);
         savedFile.setId(5);
         when(fileRepository.save(any())).thenReturn(savedFile);
 
         assertThrows(StorageException.class, () ->
-                fileService.uploadFile(file, 1, null));
+                fileService.uploadFile(file, "testUser", null));
     }
 
 
@@ -116,13 +117,13 @@ public class FileServiceTest {
     void shouldSaveFile_whenNoParentDir() {
         MockMultipartFile file = new MockMultipartFile("file", "empty.txt", "text/plain", "empty".getBytes());
 
-        when(userRepository.findUserById(1)).thenReturn(mockUser);
+        when(userRepository.findUserByUsername("testUser")).thenReturn(Optional.ofNullable(mockUser));
 
         File savedFile = new File("storage", "testFile.txt", false, true, mockUser, null);
         savedFile.setId(5);
         when(fileRepository.save(any())).thenReturn(savedFile);
 
-        assertDoesNotThrow(() -> fileService.uploadFile(file, 1, null));
+        assertDoesNotThrow(() -> fileService.uploadFile(file, "testUser", null));
         verify(fileRepository, times(3)).save(any());
     }
 
@@ -130,43 +131,53 @@ public class FileServiceTest {
     void shouldSaveFile_whenHaveAParentDir() {
         MockMultipartFile file = new MockMultipartFile("file", "empty.txt", "text/plain", "empty".getBytes());
 
-        when(userRepository.findUserById(1)).thenReturn(mockUser);
+        when(userRepository.findUserByUsername("testUser")).thenReturn(Optional.ofNullable(mockUser));
         when(fileRepository.findFileById(1)).thenReturn(mockParentDir);
 
         File savedFile = new File("storage", "testFile.txt", false, true, mockUser, mockParentDir);
         savedFile.setId(6);
         when(fileRepository.save(any())).thenReturn(savedFile);
 
-        assertDoesNotThrow(() -> fileService.uploadFile(file, 1, 1));
+        assertDoesNotThrow(() -> fileService.uploadFile(file, "testUser", 1));
         verify(fileRepository, times(3)).save(any());
     }
 
+    /**
+     * Tests for when making a directory is not working
+     */
+    @Test
+    void shouldThrowStorageException_whenUserDoesNotExistForDirectories() {
+        when(userRepository.findUserByUsername("testUser")).thenReturn(Optional.empty());
+
+        assertThrows(StorageException.class, () ->
+                fileService.makeDirectory("testDirectory", "testUser", mockParentDir.getId()));
+    }
     /**
      * Tests for when making a directory is working
      */
     @Test
     void shouldSaveDirectory_whenNoParentDir() {
-        when(userRepository.findUserById(1)).thenReturn(mockUser);
+        when(userRepository.findUserByUsername("testUser")).thenReturn(Optional.ofNullable(mockUser));
 
         File savedDir = new File("storage", "testFolder", true, true, mockUser, null);
         savedDir.setId(5);
         when(fileRepository.save(any())).thenReturn(savedDir);
 
-        fileService.makeDirectory("testFolder", 1, null);
+        fileService.makeDirectory("testFolder", "testUser", null);
 
         verify(fileRepository, times(2)).save(any());
     }
 
     @Test
     void shouldSaveDirectory_whenParentDirExists() {
-        when(userRepository.findUserById(1)).thenReturn(mockUser);
+        when(userRepository.findUserByUsername("testUser")).thenReturn(Optional.ofNullable(mockUser));
         when(fileRepository.findFileById(1)).thenReturn(mockParentDir);
 
         File savedDir = new File("storage", "testFolder", true, true, mockUser, null);
         savedDir.setId(6);
         when(fileRepository.save(any())).thenReturn(savedDir);
 
-        fileService.makeDirectory("testFolder", 1, 1);
+        fileService.makeDirectory("testFolder", "testUser", 1);
 
         verify(fileRepository, times(2)).save(any());
     }

@@ -15,6 +15,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.Optional;
 
 @Service
 public class FileService {
@@ -35,38 +36,38 @@ public class FileService {
      * Called when the user is trying to upload a file, is hashing the ID and put it in the "Path" column
      *
      * @param file        the file the user is trying to upload
-     * @param userId      the id of the user who is uploading
+     * @param username    the username of the user trying to upload
      * @param parentDirId the id of the parent IF NECESSARY (null if it's at the root)
      * @throws StorageException if the file is somehow empty or there's an error during the storing
      */
-    public void uploadFile(MultipartFile file, int userId, Integer parentDirId) {
+    public void uploadFile(MultipartFile file, String username, Integer parentDirId) {
         if (file.isEmpty()) {
             throw new StorageException("Impossible de stocker un fichier vide ou null.");
         }
 
         //Find the correct user who uploaded the file
-        User user = userRepository.findUserById(userId);
-        if (user == null) {
+        Optional<User> user = userRepository.findUserByUsername(username);
+        if (user.isEmpty()) {
             throw new StorageException("L'utilisateur n'existe pas.");
         }
+        User userFound = user.get();
 
         //Get the parent directory or null if it's at the root
         File parentFile = getParentDirectory(parentDirId);
-        File fileEntity = new File(storageRoot.toString(), file.getOriginalFilename(), false, true, user, parentFile);
+        File fileEntity = new File(storageRoot.toString(), file.getOriginalFilename(), false, true, userFound, parentFile);
 
         //Saving in the database to get the id
         fileEntity = fileRepository.save(fileEntity);
 
         //Hasing the id to get the hashed file name
         String hashedFileName = obtainHashedFileName(fileEntity.getId());
-        //Adding the extension to the hashed file name
-        String extension = fileEntity.getName().substring(fileEntity.getName().lastIndexOf("."));
         fileEntity.setPath(hashedFileName);
         fileRepository.save(fileEntity);
 
         //Putting the file in the storage
         Path destinationFile = this.storageRoot.resolve(hashedFileName);
         try {
+            Files.createDirectories(storageRoot); //Create the storage folder if it doesn't exist
             InputStream inputStream = file.getInputStream();
             Files.copy(inputStream, destinationFile, StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
@@ -81,15 +82,20 @@ public class FileService {
      * Called when the user is trying to create a directory
      *
      * @param name        the name of the directory
-     * @param userId      the id of the user trying to create a directory
+     * @param username    the username of the user trying to create a directory
      * @param parentDirId the id of the parent IF NECESSARY (null if it's at the root)
      */
-    public void makeDirectory(String name, int userId, Integer parentDirId) {
+    public void makeDirectory(String name, String username, Integer parentDirId) {
         //Find the correct user who made the directory
-        User user = userRepository.findUserById(userId);
+        Optional<User> user = userRepository.findUserByUsername(username);
+        if (user.isEmpty()) {
+            throw new StorageException("L'utilisateur n'existe pas.");
+        }
+        User userFound = user.get();
+
         //Get the parent directory or null if it's at the root
         File parentFile = getParentDirectory(parentDirId);
-        File dirEntity = new File(storageRoot.toString(), name, true, true, user, parentFile);
+        File dirEntity = new File(storageRoot.toString(), name, true, true, userFound, parentFile);
         //Saving a first time to get the id
         fileRepository.save(dirEntity);
 
