@@ -41,11 +41,14 @@ public class FileService {
      */
     public void uploadFile(MultipartFile file, int userId, Integer parentDirId) {
         if (file.isEmpty()) {
-            throw new StorageException("Impossible de stocker un fichier vide.");
+            throw new StorageException("Impossible de stocker un fichier vide ou null.");
         }
 
         //Find the correct user who uploaded the file
         User user = userRepository.findUserById(userId);
+        if (user == null) {
+            throw new StorageException("L'utilisateur n'existe pas.");
+        }
 
         //Get the parent directory or null if it's at the root
         File parentFile = getParentDirectory(parentDirId);
