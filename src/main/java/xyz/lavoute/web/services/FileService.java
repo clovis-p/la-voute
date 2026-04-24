@@ -54,7 +54,11 @@ public class FileService {
 
         //Get the parent directory or null if it's at the root
         File parentFile = getParentDirectory(parentDirId);
-        File fileEntity = new File(storageRoot.toString(), file.getOriginalFilename(), false, true, userFound, parentFile);
+
+        if (file.getOriginalFilename() == null) {
+            throw new StorageException("Impossible d'obtenir le nom du fichier");
+        }
+        File fileEntity = new File(storageRoot.toString(), Path.of(file.getOriginalFilename()).getFileName().toString(), false, true, user, parentFile);
 
         //Saving in the database to get the id
         fileEntity = fileRepository.save(fileEntity);
