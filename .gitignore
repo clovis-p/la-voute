@@ -3,6 +3,7 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 frontend/node_modules
+storage/
 
 ### STS ###
 .apt_generated
