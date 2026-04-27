@@ -4,12 +4,20 @@ import {Avatar, Toolbar, SplitButton} from "primevue";
 import AppLogo from '@/assets/logo.svg';
 import DefaultAvatar from '@/assets/test-images/default-pp.jpg';
 import { useRouter } from 'vue-router';
+import axios from "axios";
 
 const router = useRouter();
 
 const userMenuItems = [
-  { label: 'Se déconnecter' }
+  {
+    label: 'Se déconnecter',
+    command: function () {
+      axios.post('/logout');
+      router.push('/');
+    }
+  }
 ];
+
 </script>
 
 <template>
