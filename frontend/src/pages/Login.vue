@@ -16,6 +16,7 @@ import { ref, onMounted } from 'vue';
 import axios from 'axios';
 import LoginForm from "../components/Login/LoginForm.vue";
 import RegisterForm from "../components/Login/RegisterForm.vue";
+import router from "@/router.js";
 
 const titleMessage = ref('');
 const subtitleMessage = ref('');
@@ -24,6 +25,12 @@ const showRegisterForm = ref(false);
 const justRegistered = ref(false);
 
 onMounted(async () => {
+  axios.get('/api/user/me').then((res) => {
+    if (res.status === 200) {
+      router.push("/accueil");
+    }
+  }).catch(() => {});
+
   const response = await axios.get('/api/home');
   titleMessage.value = response.data.titleMessage;
   subtitleMessage.value = response.data.subtitleMessage;
