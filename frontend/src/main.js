@@ -5,6 +5,16 @@ import PrimeVue from 'primevue/config';
 import Aura from '@primeuix/themes/aura';
 import {definePreset} from "@primeuix/themes";
 import router from './router.js';
+import axios from 'axios';
+
+axios.interceptors.request.use(async config => {
+  const isMutating = ['post', 'put', 'patch', 'delete'].includes(config.method);
+  const hasCsrfCookie = document.cookie.split(';').some(c => c.trim().startsWith('XSRF-TOKEN='));
+  if (isMutating && !hasCsrfCookie) {
+    await axios.get('/api/csrf');
+  }
+  return config;
+});
 
 const app = createApp(App);
 
