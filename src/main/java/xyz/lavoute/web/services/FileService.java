@@ -44,6 +44,9 @@ public class FileService {
         if (file.isEmpty()) {
             throw new StorageException("Impossible de stocker un fichier vide ou null.");
         }
+        if (file.getOriginalFilename() == null || file.getOriginalFilename().isBlank()) {
+            throw new StorageException("Impossible d'obtenir le nom du fichier");
+        }
 
         //Find the correct user who uploaded the file
         Optional<User> user = userRepository.findUserByUsername(username);
@@ -55,9 +58,7 @@ public class FileService {
         //Get the parent directory or null if it's at the root
         File parentFile = getParentDirectory(parentDirId);
 
-        if (file.getOriginalFilename() == null) {
-            throw new StorageException("Impossible d'obtenir le nom du fichier");
-        }
+        //Make the file entity
         File fileEntity = new File(storageRoot.toString(), Path.of(file.getOriginalFilename()).getFileName().toString(), false, true, userFound, parentFile);
         fileEntity.setFileSize(file.getSize());
 
