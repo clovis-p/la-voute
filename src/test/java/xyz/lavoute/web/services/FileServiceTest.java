@@ -61,6 +61,15 @@ public class FileServiceTest {
     }
 
     @Test
+    void shouldThrowStorageException_whenOriginalFileNameIsNull() {
+        MockMultipartFile nullNameFile = new MockMultipartFile("file", null, "text/plain", "empty".getBytes());
+
+        assertThrows(StorageException.class, () -> {
+            fileService.uploadFile(nullNameFile, "testuser", mockUser.getId());
+        });
+    }
+
+    @Test
     void shouldThrowStorageException_whenUserDoesNotExistForFiles() {
         MockMultipartFile file = new MockMultipartFile("file", "empty.txt", "text/plain", "empty".getBytes());
 
