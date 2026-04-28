@@ -12,8 +12,13 @@ const userMenuItems = [
   {
     label: 'Se déconnecter',
     command: function () {
-      axios.post('/logout');
-      router.push('/');
+      let response = axios.post('/logout');
+      if (response.status === 200) {
+        router.push('/');
+      }
+      else {
+        console.log(response);
+      }
     }
   }
 ];
