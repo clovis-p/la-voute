@@ -169,13 +169,13 @@ public class FileService {
         if (parentDirectory == null) {
             throw new StorageException("Le dossier parent n'existe pas.");
         }
+        //If the parent directory is not associated to the user (normally shouldn't happen, but we never know)
+        if (parentDirectory.getUser() != user) {
+            throw new StorageException("Le parent n'est pas associé à l'utilisateur.");
+        }
         //If the id given is a file and not a directory
         if (!parentDirectory.getIsDirectory()) {
             throw new StorageException("Le parent doit être un dossier.");
-        }
-        //If the parent directory is not associated to the user (normally shouldn't happen, but we never know)
-        if (parentDirectory.getUser() != user) {
-            throw new StorageException("Le dossier parent n'est pas associé à l'utilisateur.");
         }
         return parentDirectory;
     }
