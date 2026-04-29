@@ -58,7 +58,7 @@ public class FileService {
         //Get the parent directory or null if it's at the root
         File parentFile = getParentDirectory(parentDirId, userFound);
 
-        if (file.getOriginalFilename() == null || file.getOriginalFilename().isEmpty()) {
+        if (file.getOriginalFilename() == null) {
             throw new StorageException("Impossible d'obtenir le nom du fichier");
         }
         File fileEntity = new File(storageRoot.toString(), Path.of(file.getOriginalFilename()).getFileName().toString(), false, true, userFound, parentFile);
