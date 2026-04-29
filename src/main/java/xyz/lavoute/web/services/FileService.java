@@ -4,6 +4,7 @@ import org.hashids.Hashids;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import xyz.lavoute.web.dto.FileGetDTO;
 import xyz.lavoute.web.exceptions.StorageException;
 import xyz.lavoute.web.models.File;
 import xyz.lavoute.web.models.User;
@@ -113,23 +114,41 @@ public class FileService {
         fileRepository.save(dirEntity);
     }
 
-    public Collection<File> obtainFilesFromSpecificDirectory(String username, Integer parentDirId) {
-
+    /**
+     * Get the files from a given directory
+     * @param username username of the user currently authenticated
+     * @param parentDirId the id of the parent folder // null if it's at the root
+     * @return a Collection<FileGetDTO> with only the informations required
+     */
+    public Collection<FileGetDTO> obtainFilesFromSpecificDirectory(String username, Integer parentDirId) {
         Optional<User> user = userRepository.findUserByUsername(username);
         if (user.isEmpty()) {
             throw new StorageException("L'utilisateur n'existe pas.");
         }
         User userFound = user.get();
 
-        File fileFound = fileRepository.findFileById(parentDirId);
-        if (fileFound == null) {
-            throw new StorageException("Le dossier parent n'existe pas.");
-        }
-        if (fileFound.getUser() != userFound) {
-            throw new StorageException("Le répertoire parent n'appartient pas à l'utilisateur connecté.");
+        Collection<File> files;
+        //If it's at the root
+        if (parentDirId == null) {
+            files = fileRepository.findAllByParentDirIdAndUser(null, userFound);
+        } else { //If it's not at the root
+            File fileFound = fileRepository.findFileById(parentDirId);
+            if (fileFound == null) {
+                throw new StorageException("Le dossier parent n'existe pas.");
+            }
+            if (fileFound.getUser() != userFound) {
+                throw new StorageException("Le répertoire parent n'appartient pas à l'utilisateur connecté.");
+            }
+            files = fileRepository.findAllByParentDirIdAndUser(parentDirId, userFound);
         }
 
-        return fileRepository.findAllByParentDirAndUser(fileFound, userFound);
+        Collection<FileGetDTO> filesDTO = new ArrayList<>();
+        //Make all the files found into the DTO to not send back useless information
+        for (File file : files) {
+            filesDTO.add(new FileGetDTO(file));
+        }
+
+        return filesDTO;
     }
 
     /**
