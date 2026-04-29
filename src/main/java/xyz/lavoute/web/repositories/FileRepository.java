@@ -11,5 +11,7 @@ public interface FileRepository extends CrudRepository<File, Integer> {
 
     File findFileById(int fileId);
 
-    Collection<File> findAllByParentDirIdAndUser(@Param("parentDir") Integer parentDirId, @Param("user") User user);
+    Collection<File> findAllByParentDirIdAndUser(@Param("parentDirId") Integer parentDirId, @Param("user") User user);
+
+    Collection<File> findAllByParentDirAndUser(@Param("ParentDir") File parentDir, @Param("user") User user);
 }

@@ -58,7 +58,7 @@ public class FileService {
         //Get the parent directory or null if it's at the root
         File parentFile = getParentDirectory(parentDirId, userFound);
 
-        if (file.getOriginalFilename() == null) {
+        if (file.getOriginalFilename() == null || file.getOriginalFilename().isEmpty()) {
             throw new StorageException("Impossible d'obtenir le nom du fichier");
         }
         File fileEntity = new File(storageRoot.toString(), Path.of(file.getOriginalFilename()).getFileName().toString(), false, true, userFound, parentFile);
@@ -127,20 +127,8 @@ public class FileService {
         }
         User userFound = user.get();
 
-        Collection<File> files;
-        //If it's at the root
-        if (parentDirId == null) {
-            files = fileRepository.findAllByParentDirIdAndUser(null, userFound);
-        } else { //If it's not at the root
-            File fileFound = fileRepository.findFileById(parentDirId);
-            if (fileFound == null) {
-                throw new StorageException("Le dossier parent n'existe pas.");
-            }
-            if (fileFound.getUser() != userFound) {
-                throw new StorageException("Le répertoire parent n'appartient pas à l'utilisateur connecté.");
-            }
-            files = fileRepository.findAllByParentDirIdAndUser(parentDirId, userFound);
-        }
+        File parentDir = getParentDirectory(parentDirId, userFound);
+        Collection<File> files = fileRepository.findAllByParentDirAndUser(parentDir, userFound);
 
         Collection<FileGetDTO> filesDTO = new ArrayList<>();
         //Make all the files found into the DTO to not send back useless information
