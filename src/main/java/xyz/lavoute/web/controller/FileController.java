@@ -8,7 +8,10 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import xyz.lavoute.web.exceptions.Error;
 import xyz.lavoute.web.exceptions.StorageException;
+import xyz.lavoute.web.models.File;
 import xyz.lavoute.web.services.FileService;
+
+import java.util.Collection;
 
 @RestController
 @CrossOrigin
@@ -49,6 +52,14 @@ public class FileController {
 
         fileService.makeDirectory(directoryName, username, parentDirId);
         return ResponseEntity.status(HttpStatus.ACCEPTED).build();
+    }
+
+    @GetMapping("/obtain")
+    public Collection<File> obtainFilesFromAGivenDirectory(@RequestParam(value = "parentDirId", required = false) Integer parentDirId) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String username = auth.getName();
+
+        return fileService.obtainFilesFromSpecificDirectory(username, parentDirId);
     }
 
     @ExceptionHandler(StorageException.class)

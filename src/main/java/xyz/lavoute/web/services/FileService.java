@@ -15,6 +15,8 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Optional;
 
 @Service
@@ -53,7 +55,7 @@ public class FileService {
         User userFound = user.get();
 
         //Get the parent directory or null if it's at the root
-        File parentFile = getParentDirectory(parentDirId);
+        File parentFile = getParentDirectory(parentDirId, userFound);
 
         if (file.getOriginalFilename() == null) {
             throw new StorageException("Impossible d'obtenir le nom du fichier");
@@ -98,7 +100,7 @@ public class FileService {
         User userFound = user.get();
 
         //Get the parent directory or null if it's at the root
-        File parentFile = getParentDirectory(parentDirId);
+        File parentFile = getParentDirectory(parentDirId, userFound);
         File dirEntity = new File(storageRoot.toString(), name, true, true, userFound, parentFile);
         //Saving a first time to get the id
         fileRepository.save(dirEntity);
@@ -109,6 +111,25 @@ public class FileService {
         dirEntity.setIsLocked(false);
         //Saving one last time when everything is done
         fileRepository.save(dirEntity);
+    }
+
+    public Collection<File> obtainFilesFromSpecificDirectory(String username, Integer parentDirId) {
+
+        Optional<User> user = userRepository.findUserByUsername(username);
+        if (user.isEmpty()) {
+            throw new StorageException("L'utilisateur n'existe pas.");
+        }
+        User userFound = user.get();
+
+        File fileFound = fileRepository.findFileById(parentDirId);
+        if (fileFound == null) {
+            throw new StorageException("Le dossier parent n'existe pas.");
+        }
+        if (fileFound.getUser() != userFound) {
+            throw new StorageException("Le répertoire parent n'appartient pas à l'utilisateur connecté.");
+        }
+
+        return fileRepository.findAllByParentDirAndUser(fileFound, userFound);
     }
 
     /**
@@ -130,7 +151,7 @@ public class FileService {
      * @return null if it's at the root, or the directory found
      * @throws StorageException if the id given doesn't exist or if it's not a directory
      */
-    private File getParentDirectory(Integer parentDirId) {
+    private File getParentDirectory(Integer parentDirId, User user) {
         //If the id is null, it means the file/directory is going to be at the root
         if (parentDirId == null) {
             return null;
@@ -145,6 +166,11 @@ public class FileService {
         if (!parentDirectory.getIsDirectory()) {
             throw new StorageException("Le parent doit être un dossier.");
         }
+        //If the parent directory is not associated to the user (normally shouldn't happen, but we never know)
+        if (parentDirectory.getUser() != user) {
+            throw new StorageException("Le dossier parent n'est pas associé à l'utilisateur.");
+        }
         return parentDirectory;
     }
+
 }

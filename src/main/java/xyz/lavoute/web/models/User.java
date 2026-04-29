@@ -1,5 +1,6 @@
 package xyz.lavoute.web.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -17,6 +18,7 @@ public class User {
     private String username;
     private String firstName;
     private String lastName;
+    @JsonIgnore // To not send the password to the frontend when getting the files
     private String password;
     private Boolean isAdmin;
     private String profilePic;

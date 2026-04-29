@@ -181,4 +181,8 @@ public class FileServiceTest {
 
         verify(fileRepository, times(2)).save(any());
     }
+
+    /**
+     * Tests for getting files
+     */
 }
