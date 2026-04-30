@@ -14,7 +14,7 @@ axios.interceptors.request.use(async config => {
     if (isMutating && !hasCsrfCookie) {
         let response = await axios.get('/api/csrf');
         if (response.status !== 200) {
-            await router.push("/login");
+            await router.push("/");
         }
     }
     return config;

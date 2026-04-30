@@ -12,11 +12,8 @@ const router = useRouter();
 const username = ref('');
 
 onMounted(async () => {
-  axios.get("api/user/me").then((res) => {
-    username.value = res.data.username;
-  }).catch(() => {
-    router.push("/");
-  });
+  const res = await axios.get("/api/user/me");
+  username.value = res.data.username;
 });
 
 const userMenuItems = [
