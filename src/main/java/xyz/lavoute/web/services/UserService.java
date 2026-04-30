@@ -45,7 +45,7 @@ public class UserService {
      * @param registrationRequestDTO the user model to validate and put in the database
      * @throws UserInvalidInformationsException when some informations are invalid
      */
-    public void registerUser(RegistrationRequestDTO registrationRequestDTO) {
+    public User registerUser(RegistrationRequestDTO registrationRequestDTO) {
         logger.info("Registering new user : " + registrationRequestDTO.getFirstName() + " " + registrationRequestDTO.getLastName());
 
         registrationRequestDTO.setUsername(registrationRequestDTO.getUsername().toLowerCase());
@@ -56,7 +56,11 @@ public class UserService {
         }
         registrationRequestDTO.setPassword(encoder.encode(registrationRequestDTO.getPassword()));
         User user = userDTOMapper.toUser(registrationRequestDTO);
-        int id = userRepository.save(user).getId();
+        User savedUser = userRepository.save(user);
+        int id = savedUser.getId();
+
         logger.info("The new user has been registered successfully with the id : " + id);
+
+        return savedUser;
     }
 }

@@ -6,6 +6,7 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 import xyz.lavoute.web.dto.RegistrationRequestDTO;
+import xyz.lavoute.web.models.User;
 import xyz.lavoute.web.services.UserService;
 
 import java.util.List;
@@ -16,7 +17,6 @@ import java.util.Random;
 @Profile("dev")
 public class UserSeeder implements CommandLineRunner {
     private static final Logger LOGGER = LoggerFactory.getLogger(UserSeeder.class);
-
     private static final int USER_AMOUNT = 3;
 
     private final List<String> names = List.of(
@@ -78,7 +78,7 @@ public class UserSeeder implements CommandLineRunner {
             user.setUsername(username);
             user.setPassword(password);
 
-            service.registerUser(user);
+            User savedUser = service.registerUser(user);
         }
     }
 }
