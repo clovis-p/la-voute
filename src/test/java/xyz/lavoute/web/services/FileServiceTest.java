@@ -9,6 +9,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.multipart.MultipartFile;
+import xyz.lavoute.web.dto.FileGetDTO;
 import xyz.lavoute.web.exceptions.StorageException;
 import xyz.lavoute.web.models.File;
 import xyz.lavoute.web.models.User;
@@ -16,10 +17,11 @@ import xyz.lavoute.web.repositories.FileRepository;
 import xyz.lavoute.web.repositories.UserRepository;
 
 import java.io.IOException;
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -189,5 +191,64 @@ public class FileServiceTest {
         fileService.makeDirectory("testFolder", "testUser", 1);
 
         verify(fileRepository, times(2)).save(any());
+    }
+
+    /**
+     * Tests for getting files (exceptions)
+     */
+    @Test
+    void shouldThrowStorageException_whenUserDoesNotExist() {
+        when(userRepository.findUserByUsername("testUser")).thenReturn(Optional.empty());
+
+        assertThrows(StorageException.class, () ->
+                fileService.obtainFilesFromSpecificDirectory("testUser", null));
+    }
+
+    @Test
+    void shouldThrowStorageException_whenParentDirIsNotOwnedByUser() {
+        User otherUser = new User();
+        otherUser.setUsername("testUser");
+
+        File parentDir = new File();
+        parentDir.setUser(otherUser);
+        parentDir.setIsDirectory(true);
+
+        when(userRepository.findUserByUsername("testUser")).thenReturn(Optional.ofNullable(mockUser));
+        when(fileRepository.findFileById(4)).thenReturn(parentDir);
+
+        assertThrows(StorageException.class, () ->
+                fileService.obtainFilesFromSpecificDirectory("testUser", 4));
+    }
+
+    /**
+     * Tests for getting files (when it works)
+     */
+    @Test
+    void shouldObtainFilesFromRootDir_whenParentDirIdIsNull() {
+        File mockFile = new File("storage", "testFile.txt", false, true, mockUser, null);
+
+        when(userRepository.findUserByUsername("testUser")).thenReturn(Optional.ofNullable(mockUser));
+        when(fileRepository.findAllByParentDirAndUser(null, mockUser)).thenReturn(List.of(mockFile));
+
+        Collection<FileGetDTO> result = fileService.obtainFilesFromSpecificDirectory("testUser", null);
+
+        assertEquals(1, result.size());
+    }
+
+    @Test
+    void shouldObtainFilesFromSpecificDirectory_whenGivenValidParentDirId() {
+        File parentDir = new File();
+        parentDir.setUser(mockUser);
+        parentDir.setIsDirectory(true);
+
+        File mockFile = new File("storage", "testFile.txt", false, true, mockUser, parentDir);
+
+        when(userRepository.findUserByUsername("testUser")).thenReturn(Optional.ofNullable(mockUser));
+        when(fileRepository.findFileById(4)).thenReturn(parentDir);
+        when(fileRepository.findAllByParentDirAndUser(parentDir, mockUser)).thenReturn(List.of(mockFile));
+
+        Collection<FileGetDTO> result = fileService.obtainFilesFromSpecificDirectory("testUser", 4);
+
+        assertEquals(1, result.size());
     }
 }

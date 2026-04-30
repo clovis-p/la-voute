@@ -4,6 +4,7 @@ import org.hashids.Hashids;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import xyz.lavoute.web.dto.FileGetDTO;
 import xyz.lavoute.web.exceptions.StorageException;
 import xyz.lavoute.web.models.File;
 import xyz.lavoute.web.models.User;
@@ -15,6 +16,8 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Optional;
 
 @Service
@@ -56,7 +59,7 @@ public class FileService {
         User userFound = user.get();
 
         //Get the parent directory or null if it's at the root
-        File parentFile = getParentDirectory(parentDirId);
+        File parentFile = getParentDirectory(parentDirId, userFound);
 
         //Make the file entity
         File fileEntity = new File(storageRoot.toString(), Path.of(file.getOriginalFilename()).getFileName().toString(), false, true, userFound, parentFile);
@@ -100,7 +103,7 @@ public class FileService {
         User userFound = user.get();
 
         //Get the parent directory or null if it's at the root
-        File parentFile = getParentDirectory(parentDirId);
+        File parentFile = getParentDirectory(parentDirId, userFound);
         File dirEntity = new File(storageRoot.toString(), name, true, true, userFound, parentFile);
         //Saving a first time to get the id
         fileRepository.save(dirEntity);
@@ -111,6 +114,31 @@ public class FileService {
         dirEntity.setIsLocked(false);
         //Saving one last time when everything is done
         fileRepository.save(dirEntity);
+    }
+
+    /**
+     * Get the files from a given directory
+     * @param username username of the user currently authenticated
+     * @param parentDirId the id of the parent folder // null if it's at the root
+     * @return a Collection<FileGetDTO> with only the informations required
+     */
+    public Collection<FileGetDTO> obtainFilesFromSpecificDirectory(String username, Integer parentDirId) {
+        Optional<User> user = userRepository.findUserByUsername(username);
+        if (user.isEmpty()) {
+            throw new StorageException("L'utilisateur n'existe pas.");
+        }
+        User userFound = user.get();
+
+        File parentDir = getParentDirectory(parentDirId, userFound);
+        Collection<File> files = fileRepository.findAllByParentDirAndUser(parentDir, userFound);
+
+        Collection<FileGetDTO> filesDTO = new ArrayList<>();
+        //Make all the files found into the DTO to not send back useless information
+        for (File file : files) {
+            filesDTO.add(new FileGetDTO(file));
+        }
+
+        return filesDTO;
     }
 
     /**
@@ -132,7 +160,7 @@ public class FileService {
      * @return null if it's at the root, or the directory found
      * @throws StorageException if the id given doesn't exist or if it's not a directory
      */
-    private File getParentDirectory(Integer parentDirId) {
+    private File getParentDirectory(Integer parentDirId, User user) {
         //If the id is null, it means the file/directory is going to be at the root
         if (parentDirId == null) {
             return null;
@@ -143,10 +171,15 @@ public class FileService {
         if (parentDirectory == null) {
             throw new StorageException("Le dossier parent n'existe pas.");
         }
+        //If the parent directory is not associated to the user (normally shouldn't happen, but we never know)
+        if (!parentDirectory.getUser().equals(user)) {
+            throw new StorageException("Le parent n'est pas associé à l'utilisateur.");
+        }
         //If the id given is a file and not a directory
         if (!parentDirectory.getIsDirectory()) {
             throw new StorageException("Le parent doit être un dossier.");
         }
         return parentDirectory;
     }
+
 }
