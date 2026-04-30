@@ -6,9 +6,12 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import xyz.lavoute.web.dto.FileGetDTO;
 import xyz.lavoute.web.exceptions.Error;
 import xyz.lavoute.web.exceptions.StorageException;
 import xyz.lavoute.web.services.FileService;
+
+import java.util.Collection;
 
 @RestController
 @CrossOrigin
@@ -49,6 +52,14 @@ public class FileController {
 
         fileService.makeDirectory(directoryName, username, parentDirId);
         return ResponseEntity.status(HttpStatus.ACCEPTED).build();
+    }
+
+    @GetMapping("/obtain")
+    public Collection<FileGetDTO> obtainFilesFromAGivenDirectory(@RequestParam(value = "parentDirId", required = false) Integer parentDirId) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String username = auth.getName();
+
+        return fileService.obtainFilesFromSpecificDirectory(username, parentDirId);
     }
 
     @ExceptionHandler(StorageException.class)
