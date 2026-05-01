@@ -1,7 +1,7 @@
 <script setup>
 import Button from "primevue/button";
 import {Avatar, Toolbar, SplitButton} from "primevue";
-import AppLogo from '@/assets/logo.svg';
+import AppLogo from '@/assets/AppLogo.vue';
 import DefaultAvatar from '@/assets/test-images/default-pp.jpg';
 import { useRouter } from 'vue-router';
 import axios from "axios";
@@ -36,7 +36,7 @@ const userMenuItems = [
     <template #start>
       <div class="flex items-center gap-2">
         <Button class="p-0!" text plain @click="router.push('/accueil')">
-          <img :src="AppLogo" class="h-8 w-8" alt="Logo" />
+          <AppLogo class="h-8 w-8" />
         </Button>
       </div>
     </template>

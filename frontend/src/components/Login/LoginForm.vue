@@ -2,7 +2,7 @@
   <div class="flex flex-col gap-8 w-full max-w-sm p-8 md:p-12">
     <div class="flex flex-col items-center gap-4">
       <div class="flex items-center gap-4">
-        <img :src="AppLogo" class="h-20 w-20" alt="Logo" />
+        <AppLogo class="h-20 w-20" />
       </div>
     </div>
 
@@ -42,7 +42,7 @@ import Password from 'primevue/password';
 import Message from 'primevue/message';
 import { Form } from '@primevue/forms';
 import { zodResolver } from '@primevue/forms/resolvers/zod';
-import AppLogo from '@/assets/logo.svg';
+import AppLogo from '@/assets/AppLogo.vue';
 import axios from 'axios';
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
