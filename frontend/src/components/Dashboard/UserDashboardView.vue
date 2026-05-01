@@ -13,12 +13,40 @@ const typeIcons = {
   Audio: MusicalNoteIcon,
 };
 
-const files = [
-  { name: 'tp2-jean-guy.zip', type: 'Archive', size: '2.4 Mo', modifiedAt: '2026-04-10' },
-  { name: 'photo-jean-guy.jpg', type: 'Image', size: '5.1 Mo', modifiedAt: '2026-04-09' },
-  { name: 'matante-labs-inc.pdf', type: 'Document', size: '98.7 Mo', modifiedAt: '2026-03-22' },
-  { name: 'matante-labs-revenus-2025.odc', type: 'Document', size: '1.5 Mo', modifiedAt: '2026-04-07' },
-];
+const files = ref([]);
+
+onMounted(() => {
+  axios.get("/api/files/obtain").then((res) => {
+    console.log(res.data);
+    for (const datum of res.data) {
+      const fileName = datum.name;
+      const fileType = (() => {
+        if (datum.isDirectory) return "Folder";
+        const ext = datum.name.match(/\.([^.]+)$/)?.[1].toLowerCase() ?? '';
+        if (/^(png|jpg|jpeg|gif|webp|svg|bmp|tiff|tif|heic|heif|avif|ico)$/.test(ext)) {
+          return "Image";
+        }
+        if (/^(mp3|wav|flac|aac|ogg|oga|m4a|wma|opus|aiff|aif)$/.test(ext)) {
+          return "Audio";
+        }
+        if (/^(mp4|mkv|webm|mov|avi|wmv|flv|m4v|mpg|mpeg|3gp|ogv|mts|m2ts|vob)$/.test(ext)) {
+          return "Video";
+        }
+        if (/^(zip|tar|gz|tgz|bz2|tbz2|xz|txz|7z|rar|zst|lz|lzma|lzh|cab|iso|ar)$/.test(ext)) {
+          return "Archive";
+        }
+        if (/^(pdf|doc|docx|odt|rtf|txt|md|tex|pages|xls|xlsx|ods|csv|tsv|numbers|ppt|pptx|odp|key|epub|mobi)$/.test(ext)) {
+          return "Document";
+        }
+        if (/^(js|mjs|cjs|jsx|ts|tsx|py|java|c|cc|cpp|cxx|h|hpp|cs|go|rs|rb|php|swift|kt|kts|scala|lua|pl|r|dart|sh|bash|zsh|sql|html|htm|css|scss|sass|less|vue|svelte|json|xml|yaml|yml|toml|ini|exe|msi|dmg|app|deb|rpm|apk|appimage)$/.test(ext)) {
+          return "Program";
+        }
+        return "Other";
+      })();
+      files.value.push({name: fileName, type: fileType, size: '0 Ko', modifiedAt: '1970-01-01'});
+    }
+  });
+})
 
 async function uploadFile(event) {
   for (const file of event.files) {
