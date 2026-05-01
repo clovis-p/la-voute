@@ -16,11 +16,12 @@ const typeIcons = {
 
 const files = ref([]);
 
-onMounted(() => {
-  axios.get("/api/files/obtain").then((res) => {
-    console.log(res.data);
+async function obtainFiles() {
+  await axios.get("/api/files/obtain").then((res) => {
     for (const datum of res.data) {
+      console.log(datum);
       const fileName = datum.name;
+
       const fileType = (() => {
         if (datum.isDirectory) return "Folder";
         const ext = datum.name.match(/\.([^.]+)$/)?.[1].toLowerCase() ?? '';
@@ -44,9 +45,16 @@ onMounted(() => {
         }
         return "Other";
       })();
-      files.value.push({name: fileName, type: fileType, size: '0 Ko', modifiedAt: '1970-01-01'});
+
+      const fileSize = datum.size / 1024;
+
+      files.value.push({name: fileName, type: fileType, size: fileSize + ' Ko', modifiedAt: '1970-01-01'});
     }
   });
+}
+
+onMounted(() => {
+  obtainFiles();
 })
 
 async function uploadFile(event) {
@@ -55,6 +63,7 @@ async function uploadFile(event) {
     formData.append('file', file);
     await axios.post('/api/files/upload', formData);
   }
+  obtainFiles();
 }
 </script>
 
