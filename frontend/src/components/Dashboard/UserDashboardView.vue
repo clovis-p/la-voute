@@ -1,5 +1,6 @@
 <script setup>
-import {Panel, DataTable, Column} from "primevue";
+import {Panel, DataTable, Column, Button, Divider, FileUpload} from "primevue";
+import axios from 'axios';
 import FolderIcon from '@/assets/icons/folder.svg';
 import FilmIcon from '@/assets/icons/film.svg';
 import ClipboardDocumentListIcon from '@/assets/icons/clipboard-document-list.svg';
@@ -18,11 +19,24 @@ const files = [
   { name: 'matante-labs-inc.pdf', type: 'Document', size: '98.7 Mo', modifiedAt: '2026-03-22' },
   { name: 'matante-labs-revenus-2025.odc', type: 'Document', size: '1.5 Mo', modifiedAt: '2026-04-07' },
 ];
+
+async function uploadFile(event) {
+  for (const file of event.files) {
+    const formData = new FormData();
+    formData.append('file', file);
+    await axios.post('/api/files/upload', formData);
+  }
+}
 </script>
 
 <template>
   <div class="px-2 pt-0 pb-2 flex-1" >
-    <Panel class="h-full" :pt="{ header: { class: 'hidden!' }, content: { class: 'p-3!' } }" >
+    <Panel class="mb-2 h-full" :pt="{ header: { class: 'hidden!' }, content: { class: 'p-3!' } }" >
+      <div class="flex gap-2">
+        <FileUpload mode="basic" :auto="true" :multiple="true" choose-icon="pi pi-cloud-upload" choose-label="Téléverser" custom-upload @uploader="uploadFile"/>
+        <Button label="Nouveau dossier" icon="pi pi-folder-plus" severity="secondary" />
+      </div>
+      <Divider class="my-3!" />
       <DataTable :value="files">
         <Column header="" style="width: 2.5rem">
           <template #body="{ data }">
