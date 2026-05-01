@@ -61,7 +61,7 @@ async function obtainFiles() {
         name: fileName,
         type: fileType,
         typeSortKey: fileType === "Folder" ? "0" : "1_" + fileType,
-        size: formatFileSize(datum.size),
+        size: datum.isDirectory? '' : formatFileSize(datum.size),
         sizeBytes: datum.size,
         modifiedAt: datum.createdOn,
       });
