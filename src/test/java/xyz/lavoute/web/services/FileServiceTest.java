@@ -208,6 +208,7 @@ public class FileServiceTest {
     void shouldThrowStorageException_whenParentDirIsNotOwnedByUser() {
         User otherUser = new User();
         otherUser.setUsername("testUser");
+        otherUser.setId(99);
 
         File parentDir = new File();
         parentDir.setUser(otherUser);
