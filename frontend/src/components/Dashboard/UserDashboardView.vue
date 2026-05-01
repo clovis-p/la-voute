@@ -1,16 +1,17 @@
 <script setup>
 import {Panel, DataTable, Column, Button, Divider, FileUpload} from "primevue";
 import axios from 'axios';
-import FolderIcon from '@/assets/icons/folder.svg';
-import FilmIcon from '@/assets/icons/film.svg';
-import ClipboardDocumentListIcon from '@/assets/icons/clipboard-document-list.svg';
-import MusicalNoteIcon from '@/assets/icons/musical-note.svg';
+import {onMounted, ref} from "vue";
 
 const typeIcons = {
-  Archive: FolderIcon,
-  Image: FilmIcon,
-  Document: ClipboardDocumentListIcon,
-  Audio: MusicalNoteIcon,
+  Folder: 'pi-folder',
+  Image: 'pi-image',
+  Audio: 'pi-headphones',
+  Video: 'pi-video',
+  Archive: 'pi-box',
+  Document: 'pi-file',
+  Program: 'pi-code',
+  Other: 'pi-question-circle',
 };
 
 const files = ref([]);
@@ -68,7 +69,7 @@ async function uploadFile(event) {
       <DataTable :value="files">
         <Column header="" style="width: 2.5rem">
           <template #body="{ data }">
-            <component :is="typeIcons[data.type]" class="w-5 h-5" />
+            <i class="pi" :class="typeIcons[data.type]" />
           </template>
         </Column>
         <Column field="name" header="Nom" />

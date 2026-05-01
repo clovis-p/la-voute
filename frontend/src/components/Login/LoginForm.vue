@@ -2,7 +2,7 @@
   <div class="flex flex-col gap-8 w-full max-w-sm p-8 md:p-12">
     <div class="flex flex-col items-center gap-4">
       <div class="flex items-center gap-4">
-        <AppLogo class="h-20 w-20" />
+        <img :src="AppLogo" class="h-20 w-20" alt="Logo" />
       </div>
     </div>
 

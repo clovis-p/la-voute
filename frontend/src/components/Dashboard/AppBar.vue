@@ -36,7 +36,7 @@ const userMenuItems = [
     <template #start>
       <div class="flex items-center gap-2">
         <Button class="p-0!" text plain @click="router.push('/accueil')">
-          <AppLogo class="h-8 w-8" />
+          <img :src="AppLogo" class="h-8 w-8" alt="Logo" />
         </Button>
       </div>
     </template>
