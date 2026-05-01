@@ -56,9 +56,15 @@ async function obtainFiles() {
         return "Other";
       })();
 
-      const fileSize = formatFileSize(datum.size);
-
-      files.value.push({id: datum.id, name: fileName, type: fileType, size: fileSize, modifiedAt: datum.createdOn});
+      files.value.push({
+        id: datum.id,
+        name: fileName,
+        type: fileType,
+        typeSortKey: fileType === "Folder" ? "0" : "1_" + fileType,
+        size: formatFileSize(datum.size),
+        sizeBytes: datum.size,
+        modifiedAt: datum.createdOn,
+      });
     }
   });
 }
@@ -77,7 +83,6 @@ async function uploadFile(event) {
 }
 
 function handleTableRowClick(item) {
-  console.log(item.data.type);
   if (item.data.type === "Folder") {
     activeDirId.value = item.data.id;
     obtainFiles();
@@ -94,16 +99,16 @@ function handleTableRowClick(item) {
         <Button label="Nouveau dossier" icon="pi pi-folder-plus" severity="secondary" @click="createDirModalActive = true" />
       </div>
       <Divider class="my-3!" />
-      <DataTable :value="files" @row-click="handleTableRowClick">
+      <DataTable :value="files" row-hover @row-click="handleTableRowClick">
         <Column header="" style="width: 2.5rem">
           <template #body="{ data }">
             <i class="pi" :class="typeIcons[data.type]" />
           </template>
         </Column>
-        <Column field="name" header="Nom" />
-        <Column field="type" header="Type" />
-        <Column field="size" header="Taille" />
-        <Column field="modifiedAt" header="Modifié le" />
+        <Column field="name" header="Nom" :sortable="true" />
+        <Column field="type" sort-field="typeSortKey" header="Type" :sortable="true" />
+        <Column field="size" sort-field="sizeBytes" header="Taille" :sortable="true" />
+        <Column field="modifiedAt" header="Modifié le" :sortable="true" />
       </DataTable>
     </Panel>
   </div>
