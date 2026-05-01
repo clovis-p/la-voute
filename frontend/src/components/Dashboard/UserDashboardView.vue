@@ -98,7 +98,7 @@ function handleTableRowClick(item) {
         <FileUpload mode="basic" :auto="true" :multiple="true" choose-icon="pi pi-cloud-upload" choose-label="Téléverser" custom-upload @uploader="uploadFile"/>
         <Button label="Nouveau dossier" icon="pi pi-folder-plus" severity="secondary" @click="createDirModalActive = true" />
       </div>
-      <Divider class="my-3!" />
+      <Divider class="mt-3! mb-0! z-1!" />
       <DataTable :value="files" row-hover @row-click="handleTableRowClick">
         <Column header="" style="width: 2.5rem">
           <template #body="{ data }">
@@ -115,5 +115,7 @@ function handleTableRowClick(item) {
 </template>
 
 <style scoped>
-
+:deep(.p-datatable-tbody > tr) {
+  cursor: pointer;
+}
 </style>
