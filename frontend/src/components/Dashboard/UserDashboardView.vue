@@ -27,9 +27,7 @@ function formatFileSize(bytes) {
 }
 
 async function obtainFiles() {
-  await axios.get("/api/files/obtain", {
-    parentDirId: activeDirId.value,
-  }).then((res) => {
+  await axios.get("/api/files/obtain" + (activeDirId.value ? "?parentDirId=" + activeDirId.value : "")).then((res) => {
     files.value = [];
     for (const datum of res.data) {
       const fileName = datum.name;
@@ -60,7 +58,7 @@ async function obtainFiles() {
 
       const fileSize = formatFileSize(datum.size);
 
-      files.value.push({name: fileName, type: fileType, size: fileSize, modifiedAt: datum.createdOn});
+      files.value.push({id: datum.id, name: fileName, type: fileType, size: fileSize, modifiedAt: datum.createdOn});
     }
   });
 }
@@ -73,9 +71,17 @@ async function uploadFile(event) {
   for (const file of event.files) {
     const formData = new FormData();
     formData.append('file', file);
-    await axios.post('/api/files/upload', formData);
+    await axios.post('/api/files/upload' + (activeDirId.value ? '?parentDirId=' + activeDirId.value : ''), formData);
   }
   obtainFiles();
+}
+
+function handleTableRowClick(item) {
+  console.log(item.data.type);
+  if (item.data.type === "Folder") {
+    activeDirId.value = item.data.id;
+    obtainFiles();
+  }
 }
 </script>
 
@@ -88,7 +94,7 @@ async function uploadFile(event) {
         <Button label="Nouveau dossier" icon="pi pi-folder-plus" severity="secondary" @click="createDirModalActive = true" />
       </div>
       <Divider class="my-3!" />
-      <DataTable :value="files">
+      <DataTable :value="files" @row-click="handleTableRowClick">
         <Column header="" style="width: 2.5rem">
           <template #body="{ data }">
             <i class="pi" :class="typeIcons[data.type]" />
