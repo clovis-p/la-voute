@@ -48,6 +48,7 @@ public class UserService {
     public void registerUser(RegistrationRequestDTO registrationRequestDTO) {
         logger.info("Registering new user : " + registrationRequestDTO.getFirstName() + " " + registrationRequestDTO.getLastName());
 
+        registrationRequestDTO.setUsername(registrationRequestDTO.getUsername().toLowerCase());
         String errorMessage = userValidator.validateUser(registrationRequestDTO);
         if (!errorMessage.isEmpty()) {
             logger.error(errorMessage);
