@@ -4,12 +4,30 @@ import {Avatar, Toolbar, SplitButton} from "primevue";
 import AppLogo from '@/assets/logo.svg';
 import DefaultAvatar from '@/assets/test-images/default-pp.jpg';
 import { useRouter } from 'vue-router';
+import axios from "axios";
+import {onMounted, ref} from "vue";
 
 const router = useRouter();
 
+const username = ref('');
+
+onMounted(async () => {
+  const res = await axios.get("/api/user/me");
+  username.value = res.data.username;
+});
+
 const userMenuItems = [
-  { label: 'Se déconnecter' }
+  {
+    label: 'Se déconnecter',
+    command: async function () {
+      const response = await axios.post('/logout');
+      if (response.status === 200) {
+        router.push('/');
+      }
+    }
+  }
 ];
+
 </script>
 
 <template>
@@ -28,7 +46,7 @@ const userMenuItems = [
         <SplitButton class="user-btn" :model="userMenuItems">
           <span class="flex items-center font-bold">
             <Avatar :image="DefaultAvatar"/>
-            <span class="mx-2">Monsieur Test</span>
+            <span class="mx-2">{{username}}</span>
           </span>
         </SplitButton>
       </div>
