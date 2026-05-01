@@ -14,12 +14,19 @@ const typeIcons = {
   Other: 'pi-question-circle',
 };
 
+function formatFileSize(bytes) {
+  if (bytes < 1024) return bytes + ' o';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' Ko';
+  if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(2) + ' Mo';
+  return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' Go';
+}
+
 const files = ref([]);
 
 async function obtainFiles() {
   await axios.get("/api/files/obtain").then((res) => {
+    files.value = [];
     for (const datum of res.data) {
-      console.log(datum);
       const fileName = datum.name;
 
       const fileType = (() => {
@@ -46,9 +53,9 @@ async function obtainFiles() {
         return "Other";
       })();
 
-      const fileSize = datum.size / 1024;
+      const fileSize = formatFileSize(datum.size);
 
-      files.value.push({name: fileName, type: fileType, size: fileSize + ' Ko', modifiedAt: '1970-01-01'});
+      files.value.push({name: fileName, type: fileType, size: fileSize, modifiedAt: datum.createdOn});
     }
   });
 }
