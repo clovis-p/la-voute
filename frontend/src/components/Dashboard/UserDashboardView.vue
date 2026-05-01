@@ -1,7 +1,8 @@
 <script setup>
-import {Panel, DataTable, Column, Button, Divider, FileUpload} from "primevue";
+import {Panel, DataTable, Column, Button, Divider, FileUpload, Dialog, InputText} from "primevue";
 import axios from 'axios';
 import {onMounted, ref} from "vue";
+import CreateDirectoryModal from "@/components/Dashboard/CreateDirectoryModal.vue";
 
 const typeIcons = {
   Folder: 'pi-folder',
@@ -14,6 +15,10 @@ const typeIcons = {
   Other: 'pi-question-circle',
 };
 
+const files = ref([]);
+const activeDirId = ref(null);
+const createDirModalActive = ref(false);
+
 function formatFileSize(bytes) {
   if (bytes < 1024) return bytes + ' o';
   if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' Ko';
@@ -21,10 +26,10 @@ function formatFileSize(bytes) {
   return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' Go';
 }
 
-const files = ref([]);
-
 async function obtainFiles() {
-  await axios.get("/api/files/obtain").then((res) => {
+  await axios.get("/api/files/obtain", {
+    parentDirId: activeDirId.value,
+  }).then((res) => {
     files.value = [];
     for (const datum of res.data) {
       const fileName = datum.name;
@@ -75,11 +80,12 @@ async function uploadFile(event) {
 </script>
 
 <template>
+  <CreateDirectoryModal :visible="createDirModalActive" :active-dir-id="activeDirId" @refresh-file-list="obtainFiles" @close="createDirModalActive = false" />
   <div class="px-2 pt-0 pb-2 flex-1" >
     <Panel class="mb-2 h-full" :pt="{ header: { class: 'hidden!' }, content: { class: 'p-3!' } }" >
       <div class="flex gap-2">
         <FileUpload mode="basic" :auto="true" :multiple="true" choose-icon="pi pi-cloud-upload" choose-label="Téléverser" custom-upload @uploader="uploadFile"/>
-        <Button label="Nouveau dossier" icon="pi pi-folder-plus" severity="secondary" />
+        <Button label="Nouveau dossier" icon="pi pi-folder-plus" severity="secondary" @click="createDirModalActive = true" />
       </div>
       <Divider class="my-3!" />
       <DataTable :value="files">
