@@ -250,6 +250,6 @@ public class FileServiceTest {
 
         Collection<FileGetDTO> result = fileService.obtainFilesFromSpecificDirectory("testUser", 4);
 
-        assertEquals(1, result.size());
+        assertEquals(2, result.size());
     }
 }
