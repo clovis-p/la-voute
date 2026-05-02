@@ -1,7 +1,7 @@
 <script setup>
 import Button from "primevue/button";
 import {Avatar, Toolbar, SplitButton} from "primevue";
-import AppLogo from '@/assets/logo.svg';
+import AppLogo from '@/assets/AppLogo.vue';
 import DefaultAvatar from '@/assets/test-images/default-pp.jpg';
 import { useRouter } from 'vue-router';
 import axios from "axios";

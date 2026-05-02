@@ -42,7 +42,7 @@ import Password from 'primevue/password';
 import Message from 'primevue/message';
 import { Form } from '@primevue/forms';
 import { zodResolver } from '@primevue/forms/resolvers/zod';
-import AppLogo from '@/assets/logo.svg';
+import AppLogo from '@/assets/AppLogo.vue';
 import axios from 'axios';
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';

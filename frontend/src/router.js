@@ -20,7 +20,10 @@ router.beforeEach(async (to) => {
         loggedIn = true;
     } catch {}
 
-    if (to.meta.requiresAuth && !loggedIn) return '/';
+    if (to.meta.requiresAuth && !loggedIn) {
+        window.location.replace('/');
+        return false;
+    }
     if (to.meta.requiresGuest && loggedIn) return '/accueil';
 });
 
