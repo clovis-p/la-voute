@@ -52,11 +52,7 @@ public class FileService {
         }
 
         //Find the correct user who uploaded the file
-        Optional<User> user = userRepository.findUserByUsername(username);
-        if (user.isEmpty()) {
-            throw new StorageException("L'utilisateur n'existe pas.");
-        }
-        User userFound = user.get();
+        User userFound = getUserEntity(username);
 
         //Get the parent directory or null if it's at the root
         File parentFile = getParentDirectory(parentDirId, userFound);
@@ -96,11 +92,7 @@ public class FileService {
      */
     public void makeDirectory(String name, String username, Integer parentDirId) {
         //Find the correct user who made the directory
-        Optional<User> user = userRepository.findUserByUsername(username);
-        if (user.isEmpty()) {
-            throw new StorageException("L'utilisateur n'existe pas.");
-        }
-        User userFound = user.get();
+        User userFound = getUserEntity(username);
 
         //Get the parent directory or null if it's at the root
         File parentFile = getParentDirectory(parentDirId, userFound);
@@ -123,11 +115,7 @@ public class FileService {
      * @return a Collection<FileGetDTO> with only the informations required
      */
     public Collection<FileGetDTO> obtainFilesFromSpecificDirectory(String username, Integer parentDirId) {
-        Optional<User> user = userRepository.findUserByUsername(username);
-        if (user.isEmpty()) {
-            throw new StorageException("L'utilisateur n'existe pas.");
-        }
-        User userFound = user.get();
+        User userFound = getUserEntity(username);
 
         File parentDir = getParentDirectory(parentDirId, userFound);
         Collection<File> files = fileRepository.findAllByParentDirAndUser(parentDir, userFound);
@@ -139,6 +127,23 @@ public class FileService {
         }
 
         return filesDTO;
+    }
+
+    public FileGetDTO renameFile(int fileId, String username, String newName) {
+        User userFound = getUserEntity(username);
+
+        File fileEntity = fileRepository.findFileById(fileId);
+        if (fileEntity == null) {
+            throw new StorageException("Le fichier n'existe pas.");
+        }
+
+        if (!fileEntity.getUser().equals(userFound)) {
+            throw new StorageException("Le fichier n'appartient pas à l'utilisateur.");
+        }
+        fileEntity.setName(newName);
+        fileRepository.save(fileEntity);
+
+        return new FileGetDTO(fileEntity);
     }
 
     /**
@@ -182,4 +187,11 @@ public class FileService {
         return parentDirectory;
     }
 
+    private User getUserEntity(String username) {
+        Optional<User> user = userRepository.findUserByUsername(username);
+        if (user.isEmpty()) {
+            throw new StorageException("L'utilisateur n'existe pas.");
+        }
+        return user.get();
+    }
 }

@@ -7,6 +7,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import xyz.lavoute.web.dto.FileGetDTO;
+import xyz.lavoute.web.dto.RenameRequest;
 import xyz.lavoute.web.exceptions.Error;
 import xyz.lavoute.web.exceptions.StorageException;
 import xyz.lavoute.web.services.FileService;
@@ -60,6 +61,14 @@ public class FileController {
         String username = auth.getName();
 
         return fileService.obtainFilesFromSpecificDirectory(username, parentDirId);
+    }
+
+    @PatchMapping("/{id}/rename")
+    public FileGetDTO renameFile(@PathVariable int id, @RequestBody RenameRequest request) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String username = auth.getName();
+
+        return fileService.renameFile(id, username, request.newName());
     }
 
     @ExceptionHandler(StorageException.class)
