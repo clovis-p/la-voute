@@ -4,6 +4,8 @@ import lombok.Getter;
 import lombok.Setter;
 import xyz.lavoute.web.models.File;
 
+import java.time.LocalDate;
+
 @Getter
 @Setter
 public class FileGetDTO {
@@ -13,6 +15,7 @@ public class FileGetDTO {
     private String username;
     private Integer parentDirId;
     private String parentDirName;
+    private LocalDate date;
 
     public FileGetDTO(File file) {
         this.id = file.getId();
@@ -21,5 +24,6 @@ public class FileGetDTO {
         this.username = file.getUser().getUsername();
         this.parentDirId = file.getParentDir() != null ? file.getParentDir().getId() : null;
         this.parentDirName = file.getParentDir() != null ? file.getParentDir().getName() : null;
+        this.date = file.getDate();
     }
 }

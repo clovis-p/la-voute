@@ -16,6 +16,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Optional;
@@ -140,7 +141,15 @@ public class FileService {
         if (!fileEntity.getUser().equals(userFound)) {
             throw new StorageException("Le fichier n'appartient pas à l'utilisateur.");
         }
+
+        //Get the extension if the target is not a directory
+        if (!fileEntity.getIsDirectory()) {
+            String extension = fileEntity.getName().substring(fileEntity.getName().lastIndexOf(".") + 1);
+            newName = newName + "." + extension;
+        }
+
         fileEntity.setName(newName);
+        fileEntity.setDate(LocalDate.now());
         fileRepository.save(fileEntity);
 
         return new FileGetDTO(fileEntity);
