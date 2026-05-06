@@ -51,7 +51,7 @@ public class UserService {
         registrationRequestDTO.setUsername(registrationRequestDTO.getUsername().toLowerCase());
         String errorMessage = userValidator.validateUser(registrationRequestDTO);
         if (!errorMessage.isEmpty()) {
-            logger.error(errorMessage);
+            logger.error(errorMessage + registrationRequestDTO.getUsername());
             throw new UserInvalidInformationsException(errorMessage);
         }
         registrationRequestDTO.setPassword(encoder.encode(registrationRequestDTO.getPassword()));
