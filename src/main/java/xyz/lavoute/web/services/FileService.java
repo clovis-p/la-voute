@@ -130,17 +130,18 @@ public class FileService {
         return filesDTO;
     }
 
+    /**
+     * Renaming a file in the database
+     * @param fileId the id of the file to rename
+     * @param username the username of the user trying to rename a file
+     * @param newName the new name of the file
+     * @return the returned file
+     */
     public FileGetDTO renameFile(int fileId, String username, String newName) {
         User userFound = getUserEntity(username);
 
         File fileEntity = fileRepository.findFileById(fileId);
-        if (fileEntity == null) {
-            throw new StorageException("Le fichier n'existe pas.");
-        }
-
-        if (!fileEntity.getUser().equals(userFound)) {
-            throw new StorageException("Le fichier n'appartient pas à l'utilisateur.");
-        }
+        validateFile(fileEntity, userFound);
 
         //Get the extension if the target is not a directory
         if (!fileEntity.getIsDirectory()) {
@@ -153,6 +154,49 @@ public class FileService {
         fileRepository.save(fileEntity);
 
         return new FileGetDTO(fileEntity);
+    }
+
+    /**
+     * Delete a selected file
+     * @param fileId the id of the file to delete
+     * @param username the username of the user trying to delete a file
+     */
+    public void deleteFile(int fileId, String username) {
+        User userFound = getUserEntity(username);
+
+        File fileEntity = fileRepository.findFileById(fileId);
+        validateFile(fileEntity, userFound);
+
+        deleteRecursive(fileEntity, userFound);
+    }
+
+    /**
+     * Recursive method to delete a file/folder and all it's children if it owns any
+     * @param file the file we need to delete / delete its children
+     * @param user the user just to be sure we only delete files associated to the user (shouldn't happen, but we never know)
+     */
+    private void deleteRecursive(File file, User user) {
+        Collection<File> children = fileRepository.findAllByParentDirAndUser(file, user);
+
+        for (File child : children) {
+            deleteRecursive(child, user);
+        }
+        fileRepository.delete(file);
+    }
+
+    /**
+     * Verifies if the file exists and if the user owns it
+     * @param file the targeted file
+     * @param user the targeted user
+     */
+    private void validateFile(File file, User user) {
+        if (file == null) {
+            throw new StorageException("Le fichier n'existe pas.");
+        }
+
+        if (!file.getUser().equals(user)) {
+            throw new StorageException("Le fichier n'appartient pas à l'utilisateur.");
+        }
     }
 
     /**
@@ -196,6 +240,11 @@ public class FileService {
         return parentDirectory;
     }
 
+    /**
+     * Getting the correct user authenticated with their username
+     * @param username the username of the user authenticated
+     * @return the user entity
+     */
     private User getUserEntity(String username) {
         Optional<User> user = userRepository.findUserByUsername(username);
         if (user.isEmpty()) {

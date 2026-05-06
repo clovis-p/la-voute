@@ -71,6 +71,17 @@ public class FileController {
         return fileService.renameFile(id, username, request.newName());
     }
 
+
+    @DeleteMapping("/{id}/delete")
+    public ResponseEntity<Integer> deleteFile(@PathVariable int id) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String username = auth.getName();
+
+        fileService.deleteFile(id, username);
+
+        return  ResponseEntity.status(HttpStatus.ACCEPTED).build();
+    }
+
     @ExceptionHandler(StorageException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ResponseBody
