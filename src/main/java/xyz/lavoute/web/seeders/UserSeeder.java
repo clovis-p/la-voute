@@ -1,139 +1,142 @@
 package xyz.lavoute.web.seeders;
 
+import lombok.AllArgsConstructor;
+import org.hashids.Hashids;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 import xyz.lavoute.web.dto.RegistrationRequestDTO;
+import xyz.lavoute.web.exceptions.StorageException;
+import xyz.lavoute.web.models.File;
 import xyz.lavoute.web.models.User;
+import xyz.lavoute.web.repositories.FileRepository;
 import xyz.lavoute.web.repositories.UserRepository;
+import xyz.lavoute.web.services.FileService;
 import xyz.lavoute.web.services.UserService;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Random;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 
-// Just remove the Component annotations to not run the seeder
 @Component
 @Profile("dev")
 public class UserSeeder implements CommandLineRunner {
     private static final Logger LOGGER = LoggerFactory.getLogger(UserSeeder.class);
-    private static final int USER_AMOUNT = 3;
 
-    private final List<String> names = List.of(
-            "James", "Mary", "Michael", "Patricia", "John",
-            "Jennifer", "Robert", "Linda", "David", "Elizabeth",
-            "William", "Barbara", "Richard", "Susan", "Joseph",
-            "Jessica", "Thomas", "Karen", "Christopher", "Sarah",
-            "Charles", "Lisa", "Daniel", "Nancy", "Matthew",
-            "Sandra", "Anthony", "Ashley", "Mark", "Emily",
-            "Steven", "Kimberly", "Donald", "Betty", "Andrew",
-            "Margaret", "Joshua", "Donna", "Paul", "Michelle",
-            "Kenneth", "Carol", "Kevin", "Amanda", "Brian",
-            "Melissa", "Timothy", "Deborah", "Ronald", "Stephanie"
-    );
+    @Value("${hashids.salt}")
+    private String hashidsSalt;
 
-    private final List<String> usernames = List.of(
-            "SnackAttacker", "CaptainGeneral", "ObviousChoice", "WiFiWhisperer", "Whisperer", "NoodleNinja", "NinjaWarrior",
-            "CouchCommander", "Commander", "BurritoBoss", "BossMaster", "PenguinPatrol", "PatrolUnit", "PixelArtist",
-            "PirateKing", "TacoTornado", "TornadoWatch", "WaffleWarrior", "WarriorLegend", "LlamaDrama", "DramaQueen",
-            "ToastMaster", "MasterMind", "CookieMonster", "MonsterHunter", "JuniorMember", "BananaBandana", "BandanaWearer",
-            "MuffinManiac", "ManiacMode", "SleepySloth", "SlothExpert", "ThunderPants", "PantsParty", "PickleTickle",
-            "TickleMonster", "GigglesMcGee", "McGeeSpecialist", "SnoreStation", "ChampionPlayer", "PancakePete", "PeteProfessional",
-            "DonutDeputy", "DeputyMarshall", "PizzaProphet", "ProphetVision", "NachoNormal", "NormalCitizen", "YawnEnthusiast",
-            "PatrolSquad", "BlanketBurglar", "BurglarAlarm", "SpudSpecialist", "StudService", "CheeseWhiz", "WhizWizard",
-            "SnackSnatcher", "SnatcherPro", "WaddleWalker", "WalkerTexas", "BubbleTrouble", "TroubleMaker", "NapEnthusiast",
-            "Enthusiast", "MemeLordHigh", "LordCommander", "LazyLegend", "LegendaryOne", "BurpBoss", "BossLevel"
-    );
-
-    private final List<String> symbols = List.of("!", "]", "+", ")", "*", "=", "(", "}", "{", "[", "&", "$");
-
-    private final Random random = new Random();
-    private UserService userService;
     private UserRepository userRepository;
+    private UserService userService;
 
-    private List<User> users = new ArrayList<>();
+    private FileRepository fileRepository;
+    private FileService fileService;
 
-    public UserSeeder(UserService userService, UserRepository userRepository) {
-        this.userService = userService;
+    private final Path storageRoot = Path.of("storage");
+
+    @Autowired
+    public UserSeeder(
+            UserRepository userRepository,
+            UserService userService,
+            FileRepository fileRepository,
+            FileService fileService
+    ) {
         this.userRepository = userRepository;
+        this.userService = userService;
+        this.fileRepository = fileRepository;
+        this.fileService = fileService;
     }
 
-    private String getUniqueName() {
-        Random rng = new Random();
-        int number = rng.nextInt(10000); // 0 to 9999
-        String formatted = String.format("%04d", number);
-
-        return names.get(random.nextInt(names.size())) + formatted;
+    private String obtainHashedFileName(int id) {
+        //Renaming the file with the hash
+        Hashids hashids = new Hashids(hashidsSalt, 8);
+        return hashids.encode(id);
     }
 
-    private void createDefaultUsers() {
-        var adminRegisterRequest = new RegistrationRequestDTO(
-                "matanteAdmin",
-                getUniqueName(),
-                getUniqueName(),
-                "Matante123!"
+    public void uploadFile(java.io.File file, User userFound, File parentFile) {
+        //Make the file entity
+        File fileEntity = new File(
+                storageRoot.toString(),
+                file.getName(),
+                false,
+                true,
+                userFound,
+                parentFile
         );
-        User adminUser = userService.registerUser(adminRegisterRequest);
-        adminUser.setIsAdmin(true);
-        User updatedAdmin = userRepository.save(adminUser);
-        users.add(updatedAdmin);
-        LOGGER.info("Admin created: " + updatedAdmin.toString());
 
-        var firstUserRegisterRequest = new RegistrationRequestDTO(
-                "usager1",
-                getUniqueName(),
-                getUniqueName(),
-                "Lavoute1!"
-        );
-        User firstUser = userService.registerUser(firstUserRegisterRequest);
-        users.add(firstUser);
-        LOGGER.info("Default User 1 created: " + firstUser.toString());
+        fileEntity.setFileSize(file.length());
 
-        var secondUserRegisterRequest = new RegistrationRequestDTO(
-                "usager2",
-                getUniqueName(),
-                getUniqueName(),
-                "Lavoute2!"
-        );
-        User secondUser = userService.registerUser(secondUserRegisterRequest);
-        users.add(secondUser);
-        LOGGER.info("Default User 2 created: " + secondUser.toString());
+        //Saving in the database to get the id
+        fileEntity = fileRepository.save(fileEntity);
+
+        //Hasing the id to get the hashed file name
+        String hashedFileName = obtainHashedFileName(fileEntity.getId());
+        fileEntity.setPath(hashedFileName);
+        fileRepository.save(fileEntity);
+
+        //Putting the file in the storage
+        Path destinationFile = this.storageRoot.resolve(hashedFileName);
+        try {
+            Files.createDirectories(storageRoot); //Create the storage folder if it doesn't exist
+            InputStream inputStream = Files.newInputStream(file.toPath());
+            Files.copy(inputStream, destinationFile, StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException e) {
+            throw new StorageException("Failed to store file.");
+        }
+        //Unlocking the file once the upload is completed
+        fileEntity.setIsLocked(false);
+        fileRepository.save(fileEntity);
     }
 
     @Override
     public void run(String... args) throws Exception {
         LOGGER.info("User Seeder running ...");
-        LOGGER.info("Seeder will create some default users ...");
+        LOGGER.info("Flushing User and File table ...");
+        fileRepository.deleteAll();
+        userRepository.deleteAll();
 
-        Optional<User> admin = userService.getUserByUsername("matanteAdmin");
-        Optional<User> firstUser = userService.getUserByUsername("usager1");
-        Optional<User> secondUser = userService.getUserByUsername("usager2");
+        var adminRegisterRequest = new RegistrationRequestDTO(
+                "matanteAdmin",
+                "James",
+                "Matthew",
+                "Matante123!"
+        );
+        User adminUser = userService.registerUser(adminRegisterRequest);
 
-        if (admin.isEmpty() && firstUser.isEmpty() && secondUser.isEmpty()) {
-            createDefaultUsers();
-        }
+        adminUser.setIsAdmin(true);
+        User updatedAdmin = userRepository.save(adminUser);
 
-        LOGGER.info("Seeder will create " + USER_AMOUNT + " users");
-        for (int i = 0 ; i < USER_AMOUNT ; i++) {
-            String firstName = getUniqueName();
-            String lastName = getUniqueName();
-            String username = usernames.get(random.nextInt(usernames.size())) + usernames.get(random.nextInt(usernames.size()));
-            String password = usernames.get(random.nextInt(usernames.size())) + random.nextInt(10) + symbols.get(random.nextInt(symbols.size()));
+        LOGGER.info("Admin created: " + updatedAdmin.toString());
 
-            var userRegitrationRequest = new RegistrationRequestDTO(firstName, lastName, username, password);
+        var firstUserRegisterRequest = new RegistrationRequestDTO(
+                "usager1",
+                "Patricia",
+                "Robert",
+                "Lavoute1!"
+        );
+        User firstUser = userService.registerUser(firstUserRegisterRequest);
+        LOGGER.info("Default User 1 created: " + firstUser.toString());
 
-            LOGGER.info("User " + (i + 1) + " with ...");
-            LOGGER.info(userRegitrationRequest.toString());
-            LOGGER.info("was created");
+        java.io.File fileAtRootFirstUser = new java.io.File("seeders_files/image_file.png");
+        uploadFile(fileAtRootFirstUser, firstUser, null);
 
-            User savedUser = userService.registerUser(userRegitrationRequest);
-            users.add(savedUser);
-        }
+        var secondUserRegisterRequest = new RegistrationRequestDTO(
+                "usager2",
+                "Linda",
+                "Lisa",
+                "Lavoute2!"
+        );
+        User secondUser = userService.registerUser(secondUserRegisterRequest);
+        LOGGER.info("Default User 2 created: " + secondUser.toString());
 
-        LOGGER.info("Here are all the users created by the seeder:");
-        LOGGER.info(users.toString());
+        java.io.File fileAtRootSecondUser = new java.io.File("seeders_files/pdf_file.pdf");
+        uploadFile(fileAtRootSecondUser, secondUser, null);
     }
 }
