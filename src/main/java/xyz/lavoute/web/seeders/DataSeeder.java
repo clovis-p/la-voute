@@ -1,6 +1,5 @@
 package xyz.lavoute.web.seeders;
 
-import lombok.AllArgsConstructor;
 import org.hashids.Hashids;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -9,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
+import org.springframework.web.multipart.support.StandardServletMultipartResolver;
 import xyz.lavoute.web.dto.RegistrationRequestDTO;
 import xyz.lavoute.web.exceptions.StorageException;
 import xyz.lavoute.web.models.File;
@@ -18,7 +18,6 @@ import xyz.lavoute.web.repositories.UserRepository;
 import xyz.lavoute.web.services.FileService;
 import xyz.lavoute.web.services.UserService;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -27,8 +26,9 @@ import java.nio.file.StandardCopyOption;
 
 @Component
 @Profile("dev")
-public class UserSeeder implements CommandLineRunner {
-    private static final Logger LOGGER = LoggerFactory.getLogger(UserSeeder.class);
+public class DataSeeder implements CommandLineRunner {
+    private static final Logger LOGGER = LoggerFactory.getLogger(DataSeeder.class);
+    private final StandardServletMultipartResolver standardServletMultipartResolver;
 
     @Value("${hashids.salt}")
     private String hashidsSalt;
@@ -42,16 +42,17 @@ public class UserSeeder implements CommandLineRunner {
     private final Path storageRoot = Path.of("storage");
 
     @Autowired
-    public UserSeeder(
+    public DataSeeder(
             UserRepository userRepository,
             UserService userService,
             FileRepository fileRepository,
-            FileService fileService
-    ) {
+            FileService fileService,
+            StandardServletMultipartResolver standardServletMultipartResolver) {
         this.userRepository = userRepository;
         this.userService = userService;
         this.fileRepository = fileRepository;
         this.fileService = fileService;
+        this.standardServletMultipartResolver = standardServletMultipartResolver;
     }
 
     private String obtainHashedFileName(int id) {
@@ -98,10 +99,13 @@ public class UserSeeder implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         LOGGER.info("User Seeder running ...");
-        LOGGER.info("Flushing User and File table ...");
+        LOGGER.info("Flushing User, File tables and storage directory ...");
         fileRepository.deleteAll();
         userRepository.deleteAll();
+        java.io.File storageDir = new java.io.File("storage/");
+        storageDir.delete();
 
+        LOGGER.info("Creating Admin ...");
         var adminRegisterRequest = new RegistrationRequestDTO(
                 "matanteAdmin",
                 "James",
@@ -113,8 +117,7 @@ public class UserSeeder implements CommandLineRunner {
         adminUser.setIsAdmin(true);
         User updatedAdmin = userRepository.save(adminUser);
 
-        LOGGER.info("Admin created: " + updatedAdmin.toString());
-
+        LOGGER.info("Creating first user ...");
         var firstUserRegisterRequest = new RegistrationRequestDTO(
                 "usager1",
                 "Patricia",
@@ -122,10 +125,20 @@ public class UserSeeder implements CommandLineRunner {
                 "Lavoute1!"
         );
         User firstUser = userService.registerUser(firstUserRegisterRequest);
-        LOGGER.info("Default User 1 created: " + firstUser.toString());
+
+        fileService.makeDirectory("firstUserEmptyDirAtRoot", firstUser.getUsername(), null);
+        File firstUserDirWithContent = fileService.makeDirectory(
+                "firstUserDirAtRoot",
+                firstUser.getUsername(),
+                null
+        );
 
         java.io.File fileAtRootFirstUser = new java.io.File("seeders_files/image_file.png");
         uploadFile(fileAtRootFirstUser, firstUser, null);
+
+        java.io.File fileInDirFirstUser = new java.io.File("seeders_files/text_file.txt");
+        uploadFile(fileInDirFirstUser, firstUser, firstUserDirWithContent);
+
 
         var secondUserRegisterRequest = new RegistrationRequestDTO(
                 "usager2",
@@ -136,7 +149,17 @@ public class UserSeeder implements CommandLineRunner {
         User secondUser = userService.registerUser(secondUserRegisterRequest);
         LOGGER.info("Default User 2 created: " + secondUser.toString());
 
+        fileService.makeDirectory("secondUserEmptyDirAtRoot", secondUser.getUsername(), null);
+        File secondtUserDirWithContent = fileService.makeDirectory(
+                "secondUserDirAtRoot",
+                secondUser.getUsername(),
+                null
+        );
+
         java.io.File fileAtRootSecondUser = new java.io.File("seeders_files/pdf_file.pdf");
         uploadFile(fileAtRootSecondUser, secondUser, null);
+
+        java.io.File fileInDirSecondUser = new java.io.File("seeders_files/image_file.png");
+        uploadFile(fileInDirSecondUser, secondUser, secondtUserDirWithContent);
     }
 }

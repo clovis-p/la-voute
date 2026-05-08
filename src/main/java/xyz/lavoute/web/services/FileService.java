@@ -94,7 +94,7 @@ public class FileService {
      * @param username    the username of the user trying to create a directory
      * @param parentDirId the id of the parent IF NECESSARY (null if it's at the root)
      */
-    public void makeDirectory(String name, String username, Integer parentDirId) {
+    public File makeDirectory(String name, String username, Integer parentDirId) {
         //Find the correct user who made the directory
         Optional<User> user = userRepository.findUserByUsername(username);
         if (user.isEmpty()) {
@@ -113,7 +113,7 @@ public class FileService {
         dirEntity.setPath(hashedFileName);
         dirEntity.setIsLocked(false);
         //Saving one last time when everything is done
-        fileRepository.save(dirEntity);
+        return fileRepository.save(dirEntity);
     }
 
     /**
