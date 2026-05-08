@@ -1,10 +1,24 @@
 import { createApp } from 'vue';
 import './style.css';
+import 'primeicons/primeicons.css';
 import App from './App.vue';
 import PrimeVue from 'primevue/config';
 import Aura from '@primeuix/themes/aura';
 import {definePreset} from "@primeuix/themes";
 import router from './router.js';
+import axios from 'axios';
+
+axios.interceptors.request.use(async config => {
+    const isMutating = ['post', 'put', 'patch', 'delete'].includes(config.method);
+    const hasCsrfCookie = document.cookie.split(';').some(c => c.trim().startsWith('XSRF-TOKEN='));
+    if (isMutating && !hasCsrfCookie) {
+        let response = await axios.get('/api/csrf');
+        if (response.status !== 200) {
+            await router.push("/");
+        }
+    }
+    return config;
+});
 
 const app = createApp(App);
 

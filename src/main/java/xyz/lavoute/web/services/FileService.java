@@ -120,10 +120,24 @@ public class FileService {
 
         File parentDir = getParentDirectory(parentDirId, userFound);
         Collection<File> files = fileRepository.findAllByParentDirAndUser(parentDir, userFound);
-
+        File parentParentDir = null;
+        if (parentDir != null && parentDir.getParentDir() != null) {
+            parentParentDir = parentDir.getParentDir();
+        }
+        else if (parentDir != null) {
+            parentParentDir = new File("storage", null, true, false, userFound, null);
+        }
         Collection<FileGetDTO> filesDTO = new ArrayList<>();
         //Make all the files found into the DTO to not send back useless information
+
+        if (parentDir != null) {
+            parentParentDir.setName("../");
+            filesDTO.add(new FileGetDTO(parentParentDir));
+        }
         for (File file : files) {
+            if (file.getIsDirectory()) {
+                file.setName(file.getName() + '/');
+            }
             filesDTO.add(new FileGetDTO(file));
         }
 

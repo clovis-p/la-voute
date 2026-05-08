@@ -2,10 +2,9 @@ import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import tailwindcss from '@tailwindcss/vite'
 import { fileURLToPath, URL } from 'node:url'
-import svgLoader from "vite-svg-loader";
 
 export default defineConfig({
-  plugins: [vue(), tailwindcss(), svgLoader()],
+  plugins: [vue(), tailwindcss()],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
@@ -24,6 +23,14 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+      },
+      '/login': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+      },
+      '/logout': {
         target: 'http://localhost:8080',
         changeOrigin: true,
       },

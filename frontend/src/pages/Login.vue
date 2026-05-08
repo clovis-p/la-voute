@@ -5,8 +5,8 @@
       <h2 class="text-white/80 text-xl text-center">{{ subtitleMessage }}</h2>
     </div>
     <div class="flex w-full md:w-1/2 items-center justify-center">
-      <LoginForm v-if="!showRegisterForm" @switch-to-register="showRegisterForm = true" />
-      <RegisterForm v-else @switch-to-login="showRegisterForm = false" />
+      <LoginForm v-if="!showRegisterForm" :registered="justRegistered" @switch-to-register="showRegisterForm = true" />
+      <RegisterForm v-else @switch-to-login="showRegisterForm = false; justRegistered = true" />
     </div>
   </div>
 </template>
@@ -21,6 +21,7 @@ const titleMessage = ref('');
 const subtitleMessage = ref('');
 
 const showRegisterForm = ref(false);
+const justRegistered = ref(false);
 
 onMounted(async () => {
   const response = await axios.get('/api/home');
