@@ -13,9 +13,13 @@ Le paramètre parentDirId permet de savoir si le fichier est à la racine ou si 
 
 # CRÉATION D'UN RÉPERTOIRE (Directories)
 ## Usage
-1. Faire POST "/api/files/directory" et l'endpoint a besoin de 2 choses dans un form-data :
- - paramètre directoryName - type String (Obligatoire)
- - paramètre parentDirId - type int (Non-Obligatoire)
+1. Faire POST "/api/files/directory" et l'endpoint a besoin de 2 choses dans un JSON :
+```json
+{
+  "directoryName": "DirectoryName", //String
+  "parentDirId": 0 //Integer, null si c'est à la racine
+}
+```
 
 Le paramètre parentDirId permet de savoir si le répertoire est à la racine ou si il a un répertoire parent
 

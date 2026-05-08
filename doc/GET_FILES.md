@@ -1,7 +1,13 @@
 # GET LES FICHIERS
 ## Usage
-1. Faire Get "/api/files/obtain" et l'endpoint a besoin d'une seule chose dans un form-data :
- - paramètre parentDirId - type int (Non-obligatoire)
+1. Faire Get "/api/files/obtain" et l'endpoint a besoin d'une seule chose dans un JSON :
+
+```json
+{
+  "parentDirId": 5 //Integer, le ID du parent, null si c'est à la racine
+  
+}
+```
 
 Fonctionnement : 
 - Lorsque l'utilisateur est à la racine de ses fichiers, tout simplement rien m'envoyer pour get les fichiers qui n'ont aucuns parents (racine)
