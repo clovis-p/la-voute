@@ -194,6 +194,10 @@ public class FileService {
             throw new StorageException("Le fichier n'existe pas.");
         }
 
+        if (file.getIsLocked()) {
+            throw new StorageException("Vous ne pouvez pas intéragir avec le fichier pour l'instant.");
+        }
+
         if (!file.getUser().equals(user)) {
             throw new StorageException("Le fichier n'appartient pas à l'utilisateur.");
         }

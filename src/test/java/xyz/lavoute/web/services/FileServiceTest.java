@@ -251,4 +251,114 @@ public class FileServiceTest {
 
         assertEquals(1, result.size());
     }
+
+    /**
+     * Tests for renaming a file and it's not working
+     */
+
+    @Test
+    void shouldThrowStorageException_whenRenamingAndUserDoesNotExist() {
+        when(userRepository.findUserByUsername("testUser")).thenReturn(Optional.empty());
+
+        assertThrows(StorageException.class, () ->
+                fileService.renameFile(1, "testUser", "newName"));
+    }
+
+    @Test
+    void shouldThrowStorageException_whenRenamingAndFileDoesNotExist() {
+        when(userRepository.findUserByUsername("testUser")).thenReturn(Optional.of(mockUser));
+        when(fileRepository.findFileById(9999)).thenReturn(null);
+
+        assertThrows(StorageException.class, () ->
+                fileService.renameFile(9999, "testUser", "nouveauNom"));
+    }
+
+    @Test
+    void shouldThrowStorageException_whenRenamingFileAndUserDoesNotOwnFile() {
+        User otherUser = new User();
+        otherUser.setUsername("otherUser");
+        otherUser.setId(1);
+
+        File fileOwnedByOtherUser = new File("storage", "fichier.txt", false, true, otherUser, null);
+
+        when(userRepository.findUserByUsername("testUser")).thenReturn(Optional.of(mockUser));
+        when(fileRepository.findFileById(1)).thenReturn(fileOwnedByOtherUser);
+
+        assertThrows(StorageException.class, () ->
+                fileService.renameFile(1, "testUser", "newName"));
+    }
+
+    /**
+     * Test for renaming a file (when it works)
+     */
+    @Test
+    void shouldRenameFileWithTheExtension_whenFileIsNotADirectory() {
+        File fileToRename = new File("storage", "testFile.txt", false, false, mockUser, null);
+        fileToRename.setId(2);
+
+        when(userRepository.findUserByUsername("testUser")).thenReturn(Optional.of(mockUser));
+        when(fileRepository.findFileById(2)).thenReturn(fileToRename);
+
+        FileGetDTO result = fileService.renameFile(2, "testUser", "newName");
+
+        assertEquals("newName.txt", fileToRename.getName());
+        verify(fileRepository).save(fileToRename);
+        assertNotNull(result);
+    }
+
+    @Test
+    void shouldRenameFileWithoutExtension_whenFileIsADirectory() {
+        File dirToRename = new File("storage", "folder", true, false, mockUser, null);
+        dirToRename.setId(3);
+
+        when(userRepository.findUserByUsername("testUser")).thenReturn(Optional.of(mockUser));
+        when(fileRepository.findFileById(3)).thenReturn(dirToRename);
+
+        FileGetDTO result = fileService.renameFile(3, "testUser", "newFolderName");
+
+        assertEquals("newFolderName", dirToRename.getName());
+        verify(fileRepository).save(dirToRename);
+        assertNotNull(result);
+    }
+
+    /**
+     * Tests for deleting a file or directory
+     */
+    @Test
+    void shouldDeleteFile_whenFileHasNoChildren() {
+        File fileToDelete = new File("storage", "testFile.txt", false, false, mockUser, null);
+        fileToDelete.setId(4);
+
+        when(userRepository.findUserByUsername("testUser")).thenReturn(Optional.of(mockUser));
+        when(fileRepository.findFileById(4)).thenReturn(fileToDelete);
+        when(fileRepository.findAllByParentDirAndUser(fileToDelete, mockUser)).thenReturn(List.of());
+
+        fileService.deleteFile(4, "testUser");
+
+        verify(fileRepository).delete(fileToDelete);
+    }
+
+    @Test
+    void shouldDeleteRecursively_whenDirectoryHasChildren() {
+        File parentDir = new File("storage", "folder", true, false, mockUser, null);
+        parentDir.setId(2);
+
+        File child1 = new File("storage", "child1.txt", false, true, mockUser, parentDir);
+        child1.setId(3);
+        File child2 = new File("storage", "child2.txt", false, true, mockUser, parentDir);
+        child2.setId(4);
+
+        when(userRepository.findUserByUsername("testUser")).thenReturn(Optional.of(mockUser));
+        when(fileRepository.findFileById(2)).thenReturn(parentDir);
+        when(fileRepository.findAllByParentDirAndUser(parentDir, mockUser)).thenReturn(List.of(child1, child2));
+        when(fileRepository.findAllByParentDirAndUser(child1, mockUser)).thenReturn(List.of());
+        when(fileRepository.findAllByParentDirAndUser(child2, mockUser)).thenReturn(List.of());
+
+        fileService.deleteFile(2, "testUser");
+
+        //The children are deleted before the parent
+        verify(fileRepository).delete(child1);
+        verify(fileRepository).delete(child2);
+        verify(fileRepository).delete(parentDir);
+    }
 }

@@ -79,7 +79,7 @@ public class FileController {
 
         fileService.deleteFile(id, username);
 
-        return  ResponseEntity.status(HttpStatus.ACCEPTED).build();
+        return ResponseEntity.status(HttpStatus.ACCEPTED).build();
     }
 
     @ExceptionHandler(StorageException.class)
