@@ -17,11 +17,13 @@ Fonctionnement :
 ```json
 [
   {
+    "createdOn": "2026-04-30",
     "id": 5,
     "isDirectory": false, // ici tu peux savoir si c'est un directory ou non
     "name": "Capture d’écran 2026-04-06 190918.png", //Pour avoir le nom et l'extension / mettre une icône adaptée comme tu veux
     "parentDirId": 4,
     "parentDirName": "Dossier", //Si jamais tu veux faire une interface un peu comme sur l'explorateur de fichier windows que tu peux voir le nom du parent en haut
+    "size": 463020, //La size est en byte
     "username": "miadionn" //Je sais pas trop si c'était nécessaire que je donne le username mais je l'ai mis comme ça pour l'instant
   },
   {

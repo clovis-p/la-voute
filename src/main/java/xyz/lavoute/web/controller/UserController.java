@@ -4,11 +4,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import xyz.lavoute.web.dto.RegistrationRequestDTO;
 import xyz.lavoute.web.exceptions.Error;
 import xyz.lavoute.web.exceptions.UserInvalidInformationsException;
 import xyz.lavoute.web.services.UserService;
+
+import java.util.Map;
 
 @RestController
 @CrossOrigin
@@ -32,6 +36,14 @@ public class UserController {
     public ResponseEntity<Integer> registerNewUser(@RequestBody RegistrationRequestDTO registrationRequestDto) {
         userService.registerUser(registrationRequestDto);
         return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    @GetMapping("/me")
+    public Map<String, String> getSessionUserInfo() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String username = auth.getName();
+
+        return Map.of("username", username);
     }
 
     @ExceptionHandler(UserInvalidInformationsException.class)
