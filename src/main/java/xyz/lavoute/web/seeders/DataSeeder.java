@@ -138,10 +138,10 @@ public class DataSeeder implements CommandLineRunner {
                 null
         );
 
-        java.io.File fileAtRootFirstUser = new java.io.File("seeders_files/image_file.png");
+        java.io.File fileAtRootFirstUser = new java.io.File("src/main/resources/seeder_files/image_file.png");
         uploadFile(fileAtRootFirstUser, firstUser, null);
 
-        java.io.File fileInDirFirstUser = new java.io.File("seeders_files/text_file.txt");
+        java.io.File fileInDirFirstUser = new java.io.File("src/main/resources/seeder_files/text_file.txt");
         uploadFile(fileInDirFirstUser, firstUser, firstUserDirWithContent);
 
 
@@ -161,10 +161,10 @@ public class DataSeeder implements CommandLineRunner {
                 null
         );
 
-        java.io.File fileAtRootSecondUser = new java.io.File("seeders_files/pdf_file.pdf");
+        java.io.File fileAtRootSecondUser = new java.io.File("src/main/resources/seeder_files/pdf_file.pdf");
         uploadFile(fileAtRootSecondUser, secondUser, null);
 
-        java.io.File fileInDirSecondUser = new java.io.File("seeders_files/image_file.png");
+        java.io.File fileInDirSecondUser = new java.io.File("src/main/resources/seeder_files/image_file.png");
         uploadFile(fileInDirSecondUser, secondUser, secondtUserDirWithContent);
     }
 }
