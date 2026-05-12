@@ -23,6 +23,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.Arrays;
 
 @Component
 @Profile("dev")
@@ -98,6 +99,10 @@ public class DataSeeder implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
+        if (!Arrays.asList(args).contains("--seed-fake-data")) {
+            return;
+        }
+
         LOGGER.info("User Seeder running ...");
         LOGGER.info("Flushing User, File tables and storage directory ...");
         fileRepository.deleteAll();

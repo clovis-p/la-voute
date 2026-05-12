@@ -17,6 +17,12 @@ Lancer le backend :
 ./mvnw spring-boot:run
 ```
 
+Exécuter le seeder de fausses données pour le développement:
+
+```bash
+./mvnw spring-boot:run -Dspring-boot.run.arguments="--seed-fake-data"
+```
+
 Lancer le frontend (dans un terminal séparé) :
 
 ```bash
