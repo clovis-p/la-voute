@@ -2,8 +2,11 @@ package xyz.lavoute.web.services;
 
 import org.hashids.Hashids;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import xyz.lavoute.web.dto.FileDownloadDTO;
 import xyz.lavoute.web.dto.FileGetDTO;
 import xyz.lavoute.web.exceptions.StorageException;
 import xyz.lavoute.web.models.File;
@@ -15,6 +18,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -24,7 +28,8 @@ import java.util.Optional;
 @Service
 public class FileService {
 
-    private final Path storageRoot = Path.of("storage");
+    @Value("${storage.root}")
+    private String storageRoot;
     private final UserRepository userRepository;
     private final FileRepository fileRepository;
 
@@ -71,9 +76,9 @@ public class FileService {
         fileRepository.save(fileEntity);
 
         //Putting the file in the storage
-        Path destinationFile = this.storageRoot.resolve(hashedFileName);
+        Path destinationFile = Path.of(this.storageRoot).resolve(hashedFileName);
         try {
-            Files.createDirectories(storageRoot); //Create the storage folder if it doesn't exist
+            Files.createDirectories(Path.of(storageRoot)); //Create the storage folder if it doesn't exist
             InputStream inputStream = file.getInputStream();
             Files.copy(inputStream, destinationFile, StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
@@ -182,6 +187,36 @@ public class FileService {
         validateFile(fileEntity, userFound);
 
         deleteRecursive(fileEntity, userFound);
+    }
+
+    /**
+     * Get the file resource with the hashed name (path)
+     * @param username the username of the currently connected user
+     * @param fileId the id of the file to get the resource from
+     * @return a file DTO containing the resource (file content), the name and the mime type (file type)
+     */
+    public FileDownloadDTO loadFileAsResource(String username, Integer fileId) {
+        User userFound = getUserEntity(username);
+
+        File fileEntity = fileRepository.findFileById(fileId);
+        validateFile(fileEntity, userFound);
+
+        Path filePath = Paths.get(storageRoot + "/" + fileEntity.getPath()).toAbsolutePath().normalize();
+
+        try {
+            String mimeType = Files.probeContentType(Paths.get(fileEntity.getName()));
+            if (mimeType == null) {
+                mimeType = "application/octet-stream";
+            }
+
+            Resource resource = new UrlResource(filePath.toUri());
+            if (!resource.exists() && !resource.isReadable()) {
+                throw new StorageException("Le fichier est introuvable ou illisible.");
+            }
+            return new FileDownloadDTO(resource, fileEntity.getName(), mimeType);
+        } catch (IOException e) {
+            throw new StorageException("Erreur lors de la lecture du fichier.");
+        }
     }
 
     /**

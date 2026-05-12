@@ -63,7 +63,7 @@ async function obtainFiles() {
         typeSortKey: fileType === "Folder" ? "0" : "1_" + fileType,
         size: datum.isDirectory? '' : formatFileSize(datum.size),
         sizeBytes: datum.size,
-        modifiedAt: datum.createdOn,
+        modifiedAt: datum.date,
       });
     }
   });
