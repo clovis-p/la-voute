@@ -7,9 +7,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.security.core.parameters.P;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.multipart.MultipartFile;
 import xyz.lavoute.web.dto.FileGetDTO;
+import xyz.lavoute.web.dto.PatchRequest;
 import xyz.lavoute.web.exceptions.StorageException;
 import xyz.lavoute.web.models.File;
 import xyz.lavoute.web.models.User;
@@ -254,28 +256,34 @@ public class FileServiceTest {
     }
 
     /**
-     * Tests for renaming a file and it's not working
+     * Tests for patching a file and it's not working
      */
 
     @Test
-    void shouldThrowStorageException_whenRenamingAndUserDoesNotExist() {
+    void shouldThrowStorageException_whenPatchingAndUserDoesNotExist() {
+        PatchRequest request = new PatchRequest("newName", null);
+
         when(userRepository.findUserByUsername("testUser")).thenReturn(Optional.empty());
 
         assertThrows(StorageException.class, () ->
-                fileService.renameFile(1, "testUser", "newName"));
+                fileService.patchFile(1, request, "testUser"));
     }
 
     @Test
-    void shouldThrowStorageException_whenRenamingAndFileDoesNotExist() {
+    void shouldThrowStorageException_whenPatchingAndFileDoesNotExist() {
+        PatchRequest request = new PatchRequest("newName", null);
+
         when(userRepository.findUserByUsername("testUser")).thenReturn(Optional.of(mockUser));
         when(fileRepository.findFileById(9999)).thenReturn(null);
 
         assertThrows(StorageException.class, () ->
-                fileService.renameFile(9999, "testUser", "nouveauNom"));
+                fileService.patchFile(9999, request, "testUser"));
     }
 
     @Test
-    void shouldThrowStorageException_whenRenamingFileAndUserDoesNotOwnFile() {
+    void shouldThrowStorageException_whenPatchingFileAndUserDoesNotOwnFile() {
+        PatchRequest request = new PatchRequest("newName", null);
+
         User otherUser = new User();
         otherUser.setUsername("otherUser");
         otherUser.setId(1);
@@ -286,7 +294,21 @@ public class FileServiceTest {
         when(fileRepository.findFileById(1)).thenReturn(fileOwnedByOtherUser);
 
         assertThrows(StorageException.class, () ->
-                fileService.renameFile(1, "testUser", "newName"));
+                fileService.patchFile(1, request, "testUser"));
+    }
+
+    @Test
+    void shouldThrowStorageException_whenPatchingFileAndNewNameIsNull() {
+        PatchRequest request = new PatchRequest(null, null);
+
+        File fileToRename = new File("storage", "testFile.txt", false, false, mockUser, null);
+        fileToRename.setId(2);
+
+        when(userRepository.findUserByUsername("testUser")).thenReturn(Optional.of(mockUser));
+        when(fileRepository.findFileById(2)).thenReturn(fileToRename);
+
+        assertThrows(StorageException.class, () ->
+                fileService.patchFile(2, request, "testUser"));
     }
 
     /**
@@ -294,13 +316,15 @@ public class FileServiceTest {
      */
     @Test
     void shouldRenameFileWithTheExtension_whenFileIsNotADirectory() {
+        PatchRequest request = new PatchRequest("newName", null);
+
         File fileToRename = new File("storage", "testFile.txt", false, false, mockUser, null);
         fileToRename.setId(2);
 
         when(userRepository.findUserByUsername("testUser")).thenReturn(Optional.of(mockUser));
         when(fileRepository.findFileById(2)).thenReturn(fileToRename);
 
-        FileGetDTO result = fileService.renameFile(2, "testUser", "newName");
+        FileGetDTO result = fileService.patchFile(2, request, "testUser");
 
         assertEquals("newName.txt", fileToRename.getName());
         verify(fileRepository).save(fileToRename);
@@ -309,17 +333,41 @@ public class FileServiceTest {
 
     @Test
     void shouldRenameFileWithoutExtension_whenFileIsADirectory() {
+        PatchRequest request = new PatchRequest("newFolderName", null);
+
         File dirToRename = new File("storage", "folder", true, false, mockUser, null);
         dirToRename.setId(3);
 
         when(userRepository.findUserByUsername("testUser")).thenReturn(Optional.of(mockUser));
         when(fileRepository.findFileById(3)).thenReturn(dirToRename);
 
-        FileGetDTO result = fileService.renameFile(3, "testUser", "newFolderName");
+        FileGetDTO result = fileService.patchFile(3, request, "testUser");
 
         assertEquals("newFolderName", dirToRename.getName());
         verify(fileRepository).save(dirToRename);
         assertNotNull(result);
+    }
+
+    /**
+     * Tests for moving a file
+     */
+
+    @Test
+    void shouldChangeFileParent_whenGivingAValidParentDir() {
+        PatchRequest request = new PatchRequest("file.txt", 2);
+
+        File fileToMove = new File("storage", "file.txt", true, false, mockUser, null);
+        fileToMove.setId(1);
+        File folder = new File("storage", "folder", true, false, mockUser, null);
+        folder.setId(2);
+
+        when(userRepository.findUserByUsername("testUser")).thenReturn(Optional.of(mockUser));
+        when(fileRepository.findFileById(1)).thenReturn(fileToMove);
+        when(fileRepository.findFileById(2)).thenReturn(folder);
+
+        FileGetDTO result = fileService.patchFile(1, request, "testUser");
+
+        assertEquals(result.getParentDirId(), folder.getId());
     }
 
     /**

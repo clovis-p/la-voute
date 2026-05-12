@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import xyz.lavoute.web.dto.FileGetDTO;
+import xyz.lavoute.web.dto.PatchRequest;
 import xyz.lavoute.web.exceptions.StorageException;
 import xyz.lavoute.web.models.File;
 import xyz.lavoute.web.models.User;
@@ -145,32 +146,6 @@ public class FileService {
     }
 
     /**
-     * Renaming a file in the database
-     * @param fileId the id of the file to rename
-     * @param username the username of the user trying to rename a file
-     * @param newName the new name of the file
-     * @return the returned file
-     */
-    public FileGetDTO renameFile(int fileId, String username, String newName) {
-        User userFound = getUserEntity(username);
-
-        File fileEntity = fileRepository.findFileById(fileId);
-        validateFile(fileEntity, userFound);
-
-        //Get the extension if the target is not a directory
-        if (!fileEntity.getIsDirectory()) {
-            String extension = fileEntity.getName().substring(fileEntity.getName().lastIndexOf(".") + 1);
-            newName = newName + "." + extension;
-        }
-
-        fileEntity.setName(newName);
-        fileEntity.setDate(LocalDate.now());
-        fileRepository.save(fileEntity);
-
-        return new FileGetDTO(fileEntity);
-    }
-
-    /**
      * Delete a selected file
      * @param fileId the id of the file to delete
      * @param username the username of the user trying to delete a file
@@ -179,9 +154,69 @@ public class FileService {
         User userFound = getUserEntity(username);
 
         File fileEntity = fileRepository.findFileById(fileId);
+        validateFileExistence(fileEntity);
         validateFile(fileEntity, userFound);
 
         deleteRecursive(fileEntity, userFound);
+    }
+
+    /**
+     * Called when you need to patch a file
+     * @param fileId the id of the file to patch
+     * @param patchRequest a record containing a new name and a new parent dir id
+     * @param username the username of the connected user
+     * @return a filegetdto with the new information
+     */
+    public FileGetDTO patchFile(int fileId, PatchRequest patchRequest, String username) {
+        User userFound = getUserEntity(username);
+
+        File fileEntity = fileRepository.findFileById(fileId);
+        validateFileExistence(fileEntity);
+        validateFile(fileEntity, userFound);
+
+        if (patchRequest.newName() == null) {
+            throw new StorageException("Le nom du fichier ne peut pas être null.");
+        }
+
+        renameFile(fileEntity, patchRequest.newName());
+        moveFile(fileEntity, patchRequest.newParentId(), userFound);
+
+        fileRepository.save(fileEntity);
+
+        return new FileGetDTO(fileEntity);
+    }
+
+    /**
+     * Renaming a file in the database
+     * @param fileEntity the id of the file to rename
+     * @param newName the new name of the file
+     */
+    private void renameFile(File fileEntity, String newName) {
+        //Get the extension if the target is not a directory
+        if (!fileEntity.getIsDirectory()) {
+            String extension = fileEntity.getName().substring(fileEntity.getName().lastIndexOf(".") + 1);
+            newName = newName + "." + extension;
+        }
+
+        fileEntity.setName(newName);
+        fileEntity.setDate(LocalDate.now());
+    }
+
+    /**
+     * called when moving a file in the database
+     * @param fileEntityToMove the file to move
+     * @param newParentId the new parentId to give
+     * @param userFound the connected user
+     */
+    public void moveFile(File fileEntityToMove, Integer newParentId, User userFound) {
+        File fileEntityNewParent = getParentDirectory(newParentId, userFound);
+
+        if (fileEntityNewParent != null) {
+            validateFileExistence(fileEntityNewParent);
+            validateFile(fileEntityNewParent, userFound);
+        }
+
+        fileEntityToMove.setParentDir(fileEntityNewParent);
     }
 
     /**
@@ -196,25 +231,6 @@ public class FileService {
             deleteRecursive(child, user);
         }
         fileRepository.delete(file);
-    }
-
-    /**
-     * Verifies if the file exists and if the user owns it
-     * @param file the targeted file
-     * @param user the targeted user
-     */
-    private void validateFile(File file, User user) {
-        if (file == null) {
-            throw new StorageException("Le fichier n'existe pas.");
-        }
-
-        if (file.getIsLocked()) {
-            throw new StorageException("Vous ne pouvez pas intéragir avec le fichier pour l'instant.");
-        }
-
-        if (!file.getUser().equals(user)) {
-            throw new StorageException("Le fichier n'appartient pas à l'utilisateur.");
-        }
     }
 
     /**
@@ -258,10 +274,30 @@ public class FileService {
         return parentDirectory;
     }
 
+    private void validateFile(File file, User user) {
+        if (file.getIsLocked()) {
+            throw new StorageException("Vous ne pouvez pas intéragir avec le fichier pour l'instant.");
+        }
+
+        if (!file.getUser().equals(user)) {
+            throw new StorageException("Le fichier n'appartient pas à l'utilisateur.");
+        }
+    }
+
     /**
-     * Getting the correct user authenticated with their username
+     * Validate the existence of a file (had to separate it from the other validation for the moving case)
+     * @param file the file to validate
+     */
+    private void validateFileExistence(File file) {
+        if (file == null) {
+            throw new StorageException("Le fichier n'existe pas.");
+        }
+    }
+
+    /**
+     * Obtain the user entity from the username authenticated
      * @param username the username of the user authenticated
-     * @return the user entity
+     * @return the entity of the user
      */
     private User getUserEntity(String username) {
         Optional<User> user = userRepository.findUserByUsername(username);
