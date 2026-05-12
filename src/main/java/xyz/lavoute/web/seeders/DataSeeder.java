@@ -97,6 +97,31 @@ public class DataSeeder implements CommandLineRunner {
         fileRepository.save(fileEntity);
     }
 
+    private void createUser(String uniqueStr, String firstName, String lastName) {
+        var userRegisterRequest = new RegistrationRequestDTO(
+                "utilisateur" + uniqueStr,
+                firstName,
+                lastName,
+                "Password!1"
+        );
+        User user = userService.registerUser(userRegisterRequest);
+
+        fileService.makeDirectory("userEmptyDirAtRoot", user.getUsername(), null);
+        File userDirWithContent = fileService.makeDirectory(
+                "userDirAtRoot",
+                user.getUsername(),
+                null
+        );
+
+        java.io.File fileAtRootUser = new java.io.File("src/main/resources/seeder_files/image_file.png");
+        uploadFile(fileAtRootUser, user, null);
+
+        java.io.File fileInDirUser = new java.io.File("src/main/resources/seeder_files/text_file.txt");
+        uploadFile(fileInDirUser, user, userDirWithContent);
+
+        LOGGER.info("User created ...");
+    }
+
     @Override
     public void run(String... args) throws Exception {
         if (!Arrays.asList(args).contains("--seed-fake-data")) {
@@ -144,7 +169,6 @@ public class DataSeeder implements CommandLineRunner {
         java.io.File fileInDirFirstUser = new java.io.File("src/main/resources/seeder_files/text_file.txt");
         uploadFile(fileInDirFirstUser, firstUser, firstUserDirWithContent);
 
-
         var secondUserRegisterRequest = new RegistrationRequestDTO(
                 "usager2",
                 "Linda",
@@ -166,5 +190,9 @@ public class DataSeeder implements CommandLineRunner {
 
         java.io.File fileInDirSecondUser = new java.io.File("src/main/resources/seeder_files/image_file.png");
         uploadFile(fileInDirSecondUser, secondUser, secondtUserDirWithContent);
+
+        createUser("1", "Jean", "Nezmarre");
+        createUser("2", "Jean", "Cule");
+        createUser("3", "Pepito", "Sangria");
     }
 }
