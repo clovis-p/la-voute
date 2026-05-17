@@ -1,5 +1,7 @@
 package xyz.lavoute.web.controller;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -9,14 +11,20 @@ import org.springframework.web.multipart.MultipartFile;
 import xyz.lavoute.web.dto.FileGetDTO;
 import xyz.lavoute.web.exceptions.Error;
 import xyz.lavoute.web.exceptions.StorageException;
+import xyz.lavoute.web.models.File;
+import xyz.lavoute.web.models.User;
 import xyz.lavoute.web.services.FileService;
+import xyz.lavoute.web.services.UserService;
 
+import java.security.Principal;
 import java.util.Collection;
+import java.util.Optional;
 
 @RestController
 @CrossOrigin
 @RequestMapping("/api/files")
 public class FileController {
+    private static final Logger LOGGER = LoggerFactory.getLogger(FileController.class);
 
     private final FileService fileService;
 
@@ -60,6 +68,37 @@ public class FileController {
         String username = auth.getName();
 
         return fileService.obtainFilesFromSpecificDirectory(username, parentDirId);
+    }
+
+    @PostMapping("share/public/{fileId}")
+    public ResponseEntity<String> shareFileExternal(
+            Principal principal,
+            UserService userService,
+            @PathVariable int fileId
+    ) {
+        String username = principal.getName();
+        Optional<User> fileOwner = userService.getUserByUsername(username);
+        Optional<File> file = fileService.getFileById(fileId);
+
+        if (fileOwner.isEmpty()) {
+            LOGGER.error("Could not find file owner with username: {}", username);
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .build();
+        }
+
+        if (file.isEmpty()) {
+            LOGGER.error("Could not find file with id: {}", fileId);
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .build();
+        }
+
+        String signedShareUrl = fileService.generateSignedUrl(fileOwner.get(), file.get());
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(signedShareUrl);
     }
 
     @ExceptionHandler(StorageException.class)

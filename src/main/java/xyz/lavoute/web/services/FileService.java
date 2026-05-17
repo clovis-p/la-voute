@@ -196,4 +196,13 @@ public class FileService {
         return parentDirectory;
     }
 
+    public String generateSignedUrl(User fileOwner, File file) {
+        return "";
+    }
+
+    public Optional<File> getFileById(int fileId) {
+       // return fileRepository.findFileById(fileId);
+        return Optional.empty();
+    }
+
 }
