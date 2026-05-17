@@ -201,8 +201,7 @@ public class FileService {
     }
 
     public Optional<File> getFileById(int fileId) {
-       // return fileRepository.findFileById(fileId);
-        return Optional.empty();
+       return fileRepository.getFileById(fileId);
     }
 
 }
