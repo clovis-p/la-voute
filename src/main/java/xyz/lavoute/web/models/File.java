@@ -16,6 +16,8 @@ public class File {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
+
+    // C'est le id hasher
     private String path;
     private String name;
 
