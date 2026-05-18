@@ -1,9 +1,12 @@
 package xyz.lavoute.web.services;
 
 import org.hashids.Hashids;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import xyz.lavoute.web.dto.FileGetDTO;
 import xyz.lavoute.web.exceptions.StorageException;
 import xyz.lavoute.web.models.File;
@@ -13,26 +16,40 @@ import xyz.lavoute.web.repositories.UserRepository;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Optional;
 
 @Service
 public class FileService {
+    private static final Logger LOGGER = LoggerFactory.getLogger(FileService.class);
 
     private final Path storageRoot = Path.of("storage");
     private final UserRepository userRepository;
     private final FileRepository fileRepository;
+    private final CryptoService cryptoService;
 
     @Value("${hashids.salt}")
     private String hashidsSalt;
 
-    public FileService(UserRepository userRepository, FileRepository fileRepository) {
+    @Value("${app.signed-url.duration-minutes}")
+    private String signedUrlValidDurationMinutes;
+
+    public FileService(
+            UserRepository userRepository,
+            FileRepository fileRepository,
+            CryptoService cryptoService
+    ) {
         this.userRepository = userRepository;
         this.fileRepository = fileRepository;
+        this.cryptoService = cryptoService;
     }
 
     /**
@@ -196,8 +213,22 @@ public class FileService {
         return parentDirectory;
     }
 
-    public String generateSignedUrl(User fileOwner, File file) {
-        return "";
+
+    public URI generateSignedUrl(User fileOwner, File file) throws NoSuchAlgorithmException, InvalidKeyException {
+        String usernameParam = "owner=" + fileOwner.getUsername();
+        String durationParam = "duration=" + signedUrlValidDurationMinutes;
+        String dataToEncode = usernameParam + "&" + durationParam;
+
+        String signature = cryptoService.generate_HMAC_SHA256_Signature(dataToEncode);
+
+        return ServletUriComponentsBuilder
+                .fromCurrentRequest()
+                .path(file.getName())
+                .queryParam("owner", fileOwner.getUsername())
+                .queryParam("expiration", signedUrlValidDurationMinutes)
+                .queryParam("signature", signature)
+                .buildAndExpand()
+                .toUri();
     }
 
     public Optional<File> getFileById(int fileId) {

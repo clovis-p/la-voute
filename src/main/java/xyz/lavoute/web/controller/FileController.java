@@ -16,6 +16,9 @@ import xyz.lavoute.web.models.User;
 import xyz.lavoute.web.services.FileService;
 import xyz.lavoute.web.services.UserService;
 
+import java.net.URI;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.security.Principal;
 import java.util.Collection;
 import java.util.Optional;
@@ -71,11 +74,11 @@ public class FileController {
     }
 
     @PostMapping("share/public/{fileId}")
-    public ResponseEntity<String> shareFileExternal(
+    public ResponseEntity<URI> shareFileExternal(
             Principal principal,
             UserService userService,
             @PathVariable int fileId
-    ) {
+    ) throws NoSuchAlgorithmException, InvalidKeyException {
         String username = principal.getName();
         Optional<User> fileOwner = userService.getUserByUsername(username);
         Optional<File> file = fileService.getFileById(fileId);
@@ -94,7 +97,7 @@ public class FileController {
                     .build();
         }
 
-        String signedShareUrl = fileService.generateSignedUrl(fileOwner.get(), file.get());
+        URI signedShareUrl = fileService.generateSignedUrl(fileOwner.get(), file.get());
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
