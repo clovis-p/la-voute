@@ -1,5 +1,5 @@
 <script setup>
-import {Panel, DataTable, Column, Button, Divider, FileUpload, Dialog, InputText} from "primevue";
+import {Panel, DataTable, Column, Button, Divider, FileUpload, Menu} from "primevue";
 import axios from 'axios';
 import {onMounted, ref} from "vue";
 import CreateDirectoryModal from "@/components/Dashboard/CreateDirectoryModal.vue";
@@ -69,9 +69,107 @@ async function obtainFiles() {
   });
 }
 
+const menu = ref(null);
+const activeFile = ref(null);
+
+function dynamicFileMenuItems() {
+  console.log()
+  if (activeFile.type === "Directory") {
+    return [
+      {
+        icon: 'pi pi-arrows-h',
+        label: 'Déplacer',
+        command: () => {
+          console.log(activeFile);
+        }
+      },
+      {
+        icon: 'pi pi-pencil',
+        label: 'Renommer',
+        command: () => {
+          console.log(activeFile);
+        }
+      },
+    ];
+  }
+  else {
+    return [
+      {
+        icon: 'pi pi-download',
+        label: 'Télécharger',
+        command: () => {
+          console.log(activeFile.value);
+        }
+      },
+      {
+        icon: 'pi pi-arrows-h',
+        label: 'Déplacer',
+        command: () => {
+          console.log(activeFile);
+        }
+      },
+      {
+        icon: 'pi pi-pencil',
+        label: 'Renommer',
+        command: () => {
+          console.log(activeFile);
+        }
+      },
+    ];
+  }
+  return
+}
+
+const fileMenuItems = [
+  {
+    icon: 'pi pi-download',
+    label: 'Télécharger',
+    command: () => {
+      console.log(activeFile.value);
+    }
+  },
+  {
+    icon: 'pi pi-arrows-h',
+    label: 'Déplacer',
+    command: () => {
+      console.log(activeFile);
+    }
+  },
+  {
+    icon: 'pi pi-pencil',
+    label: 'Renommer',
+    command: () => {
+      console.log(activeFile);
+    }
+  },
+];
+
+const directoryMenuItems = [
+  {
+    icon: 'pi pi-arrows-h',
+    label: 'Déplacer',
+    command: () => {
+      console.log(activeFile);
+    }
+  },
+  {
+    icon: 'pi pi-pencil',
+    label: 'Renommer',
+    command: () => {
+      console.log(activeFile);
+    }
+  },
+];
+
+function toggleFileMenu(event, data) {
+  activeFile.value = data;
+  menu.value.toggle(event);
+}
+
+
 onMounted(() => {
   obtainFiles();
-})
+});
 
 async function uploadFile(event) {
   for (const file of event.files) {
@@ -109,7 +207,13 @@ function handleTableRowClick(item) {
         <Column field="type" sort-field="typeSortKey" header="Type" :sortable="true" />
         <Column field="size" sort-field="sizeBytes" header="Taille" :sortable="true" />
         <Column field="modifiedAt" header="Modifié le" :sortable="true" />
+        <Column header="" style="width: 2.5rem">
+          <template #body="{ data }">
+            <Button type="button" outlined severity="secondary" size="small" icon="pi pi-ellipsis-h" @click="toggleFileMenu($event, data)" aria-haspopup="true" aria-controls="overlay_menu" />
+          </template>
+        </Column>
       </DataTable>
+      <Menu ref="menu" id="overlay_menu" :model="dynamicFileMenuItems()" :popup="true" />
     </Panel>
   </div>
 </template>
