@@ -1,7 +1,7 @@
 <script setup>
 import {Panel, DataTable, Column, Button, Divider, FileUpload, Menu} from "primevue";
 import axios from 'axios';
-import {onMounted, ref} from "vue";
+import {computed, onMounted, ref} from "vue";
 import CreateDirectoryModal from "@/components/Dashboard/CreateDirectoryModal.vue";
 
 const typeIcons = {
@@ -72,94 +72,36 @@ async function obtainFiles() {
 const menu = ref(null);
 const activeFile = ref(null);
 
-function dynamicFileMenuItems() {
-  console.log()
-  if (activeFile.type === "Directory") {
-    return [
-      {
-        icon: 'pi pi-arrows-h',
-        label: 'Déplacer',
-        command: () => {
-          console.log(activeFile);
-        }
-      },
-      {
-        icon: 'pi pi-pencil',
-        label: 'Renommer',
-        command: () => {
-          console.log(activeFile);
-        }
-      },
-    ];
+const fileMenuItems = computed(() => {
+  if (!activeFile.value) return [];
+  const items = [];
+  if (activeFile.value.type !== "Folder") {
+    items.push({
+      icon: 'pi pi-download',
+      label: 'Télécharger',
+      command: () => {
+        console.log(activeFile.value);
+      }
+    });
   }
-  else {
-    return [
-      {
-        icon: 'pi pi-download',
-        label: 'Télécharger',
-        command: () => {
-          console.log(activeFile.value);
-        }
-      },
-      {
-        icon: 'pi pi-arrows-h',
-        label: 'Déplacer',
-        command: () => {
-          console.log(activeFile);
-        }
-      },
-      {
-        icon: 'pi pi-pencil',
-        label: 'Renommer',
-        command: () => {
-          console.log(activeFile);
-        }
-      },
-    ];
-  }
-  return
-}
-
-const fileMenuItems = [
-  {
-    icon: 'pi pi-download',
-    label: 'Télécharger',
-    command: () => {
-      console.log(activeFile.value);
-    }
-  },
-  {
-    icon: 'pi pi-arrows-h',
-    label: 'Déplacer',
-    command: () => {
-      console.log(activeFile);
-    }
-  },
-  {
-    icon: 'pi pi-pencil',
-    label: 'Renommer',
-    command: () => {
-      console.log(activeFile);
-    }
-  },
-];
-
-const directoryMenuItems = [
-  {
-    icon: 'pi pi-arrows-h',
-    label: 'Déplacer',
-    command: () => {
-      console.log(activeFile);
-    }
-  },
-  {
-    icon: 'pi pi-pencil',
-    label: 'Renommer',
-    command: () => {
-      console.log(activeFile);
-    }
-  },
-];
+  items.push(
+    {
+      icon: 'pi pi-arrows-h',
+      label: 'Déplacer',
+      command: () => {
+        console.log(activeFile.value);
+      }
+    },
+    {
+      icon: 'pi pi-pencil',
+      label: 'Renommer',
+      command: () => {
+        console.log(activeFile.value);
+      }
+    },
+  );
+  return items;
+});
 
 function toggleFileMenu(event, data) {
   activeFile.value = data;
@@ -213,7 +155,7 @@ function handleTableRowClick(item) {
           </template>
         </Column>
       </DataTable>
-      <Menu ref="menu" id="overlay_menu" :model="dynamicFileMenuItems()" :popup="true" />
+      <Menu ref="menu" id="overlay_menu" :model="fileMenuItems" :popup="true" />
     </Panel>
   </div>
 </template>
