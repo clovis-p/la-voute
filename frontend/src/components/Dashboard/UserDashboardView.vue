@@ -80,7 +80,7 @@ const fileMenuItems = computed(() => {
       icon: 'pi pi-download',
       label: 'Télécharger',
       command: () => {
-        console.log(activeFile.value);
+        downloadFile(activeFile.value.id);
       }
     });
   }
@@ -106,6 +106,12 @@ const fileMenuItems = computed(() => {
 function toggleFileMenu(event, data) {
   activeFile.value = data;
   menu.value.toggle(event);
+}
+
+function downloadFile(fileId) {
+  const link = document.createElement('a');
+  link.href = `/api/files/${fileId}/download`;
+  link.click();
 }
 
 
