@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -192,12 +193,6 @@ public class FileService {
      * @param newName the new name of the file
      */
     private void renameFile(File fileEntity, String newName) {
-        //Get the extension if the target is not a directory
-        if (!fileEntity.getIsDirectory()) {
-            String extension = fileEntity.getName().substring(fileEntity.getName().lastIndexOf(".") + 1);
-            newName = newName + "." + extension;
-        }
-
         fileEntity.setName(newName);
         fileEntity.setDate(LocalDate.now());
     }
@@ -229,6 +224,15 @@ public class FileService {
 
         for (File child : children) {
             deleteRecursive(child, user);
+        }
+
+        if (!file.getIsDirectory()) {
+            try {
+                Path filePath = Paths.get(storageRoot.toString(), file.getPath()).toAbsolutePath();
+                Files.deleteIfExists(filePath);
+            } catch (IOException e) {
+                throw new StorageException("Erreur lors de la suppression du fichier du disque.");
+            }
         }
         fileRepository.delete(file);
     }
