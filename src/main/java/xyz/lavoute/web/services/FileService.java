@@ -161,7 +161,11 @@ public class FileService {
         validateFile(fileEntity, userFound);
 
         Path filePath = Paths.get(storageRoot + "/" + fileEntity.getPath()).toAbsolutePath().normalize();
+        Path safeRoot = Paths.get(storageRoot).toAbsolutePath().normalize();
 
+        if (!filePath.startsWith(safeRoot)) {
+            throw new StorageException("Chemin vers le fichier invalide.");
+        }
         try {
             String mimeType = Files.probeContentType(Paths.get(fileEntity.getName()));
             if (mimeType == null) {
@@ -169,7 +173,7 @@ public class FileService {
             }
 
             Resource resource = new UrlResource(filePath.toUri());
-            if (!resource.exists() && !resource.isReadable()) {
+            if (!resource.exists() || !resource.isReadable()) {
                 throw new StorageException("Le fichier est introuvable ou illisible.");
             }
             return new FileDownloadDTO(resource, fileEntity.getName(), mimeType);

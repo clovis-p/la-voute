@@ -2,10 +2,7 @@ package xyz.lavoute.web.controller;
 
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -16,6 +13,7 @@ import xyz.lavoute.web.exceptions.Error;
 import xyz.lavoute.web.exceptions.StorageException;
 import xyz.lavoute.web.services.FileService;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 
 @RestController
@@ -76,7 +74,13 @@ public class FileController {
 
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(downloadDTO.getMimeType()))
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + downloadDTO.getFileName() + "\"")
+                .header(
+                        HttpHeaders.CONTENT_DISPOSITION,
+                        ContentDisposition.attachment()
+                                .filename(downloadDTO.getFileName(), StandardCharsets.UTF_8)
+                                .build()
+                                .toString()
+                )
                 .body(downloadDTO.getResource());
     }
 

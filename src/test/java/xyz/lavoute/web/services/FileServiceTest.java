@@ -1,5 +1,6 @@
 package xyz.lavoute.web.services;
 
+import org.aspectj.util.Reflection;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -301,6 +302,21 @@ public class FileServiceTest {
         when(fileRepository.findFileById(1)).thenReturn(fileEntity);
 
         ReflectionTestUtils.setField(fileService, "storageRoot", "/nonexistent");
+
+        assertThrows(StorageException.class, () ->
+                fileService.loadFileAsResource("testUser", 1));
+    }
+
+    @Test
+    void shouldThrowStorageException_whenPathTraversalDetected(@TempDir Path tempDir) {
+        File fileEntity = new File(tempDir.toString(), "malicious.txt", false, false, mockUser, null);
+        fileEntity.setId(1);
+        fileEntity.setPath("../../etc/passwd");
+
+        when(userRepository.findUserByUsername("testUser")).thenReturn(Optional.of(mockUser));
+        when(fileRepository.findFileById(1)).thenReturn(fileEntity);
+
+        ReflectionTestUtils.setField(fileService, "storageRoot", tempDir.toString());
 
         assertThrows(StorageException.class, () ->
                 fileService.loadFileAsResource("testUser", 1));
