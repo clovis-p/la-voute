@@ -20,7 +20,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Optional;
@@ -150,46 +149,6 @@ public class FileService {
     }
 
     /**
-     * Renaming a file in the database
-     * @param fileId the id of the file to rename
-     * @param username the username of the user trying to rename a file
-     * @param newName the new name of the file
-     * @return the returned file
-     */
-    public FileGetDTO renameFile(int fileId, String username, String newName) {
-        User userFound = getUserEntity(username);
-
-        File fileEntity = fileRepository.findFileById(fileId);
-        validateFile(fileEntity, userFound);
-
-        //Get the extension if the target is not a directory
-        if (!fileEntity.getIsDirectory()) {
-            String extension = fileEntity.getName().substring(fileEntity.getName().lastIndexOf(".") + 1);
-            newName = newName + "." + extension;
-        }
-
-        fileEntity.setName(newName);
-        fileEntity.setDate(LocalDate.now());
-        fileRepository.save(fileEntity);
-
-        return new FileGetDTO(fileEntity);
-    }
-
-    /**
-     * Delete a selected file
-     * @param fileId the id of the file to delete
-     * @param username the username of the user trying to delete a file
-     */
-    public void deleteFile(int fileId, String username) {
-        User userFound = getUserEntity(username);
-
-        File fileEntity = fileRepository.findFileById(fileId);
-        validateFile(fileEntity, userFound);
-
-        deleteRecursive(fileEntity, userFound);
-    }
-
-    /**
      * Get the file resource with the hashed name (path)
      * @param username the username of the currently connected user
      * @param fileId the id of the file to get the resource from
@@ -217,20 +176,6 @@ public class FileService {
         } catch (IOException e) {
             throw new StorageException("Erreur lors de la lecture du fichier.");
         }
-    }
-
-    /**
-     * Recursive method to delete a file/folder and all it's children if it owns any
-     * @param file the file we need to delete / delete its children
-     * @param user the user just to be sure we only delete files associated to the user (shouldn't happen, but we never know)
-     */
-    private void deleteRecursive(File file, User user) {
-        Collection<File> children = fileRepository.findAllByParentDirAndUser(file, user);
-
-        for (File child : children) {
-            deleteRecursive(child, user);
-        }
-        fileRepository.delete(file);
     }
 
     /**
