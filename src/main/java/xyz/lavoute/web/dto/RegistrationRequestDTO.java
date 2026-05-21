@@ -1,11 +1,13 @@
 package xyz.lavoute.web.dto;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import xyz.lavoute.web.models.User;
 
 @Getter
 @Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@ToString
 public class RegistrationRequestDTO {
 
     private String username;
@@ -18,8 +20,5 @@ public class RegistrationRequestDTO {
         this.firstName = user.getFirstName();
         this.lastName = user.getLastName();
         this.password = user.getPassword();
-    }
-
-    public RegistrationRequestDTO() {
     }
 }

@@ -4,9 +4,12 @@ import org.hashids.Hashids;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import xyz.lavoute.web.dto.FileDownloadDTO;
 import xyz.lavoute.web.dto.FileGetDTO;
 import xyz.lavoute.web.exceptions.StorageException;
 import xyz.lavoute.web.models.File;
@@ -19,6 +22,7 @@ import java.io.InputStream;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 
 import java.security.InvalidKeyException;
@@ -31,7 +35,8 @@ import java.util.Optional;
 public class FileService {
     private static final Logger LOGGER = LoggerFactory.getLogger(FileService.class);
 
-    private final Path storageRoot = Path.of("storage");
+    @Value("${storage.root}")
+    private String storageRoot;
     private final UserRepository userRepository;
     private final FileRepository fileRepository;
     private final CryptoService cryptoService;
@@ -69,11 +74,7 @@ public class FileService {
         }
 
         //Find the correct user who uploaded the file
-        Optional<User> user = userRepository.findUserByUsername(username);
-        if (user.isEmpty()) {
-            throw new StorageException("L'utilisateur n'existe pas.");
-        }
-        User userFound = user.get();
+        User userFound = getUserEntity(username);
 
         //Get the parent directory or null if it's at the root
         File parentFile = getParentDirectory(parentDirId, userFound);
@@ -91,9 +92,9 @@ public class FileService {
         fileRepository.save(fileEntity);
 
         //Putting the file in the storage
-        Path destinationFile = this.storageRoot.resolve(hashedFileName);
+        Path destinationFile = Path.of(this.storageRoot).resolve(hashedFileName);
         try {
-            Files.createDirectories(storageRoot); //Create the storage folder if it doesn't exist
+            Files.createDirectories(Path.of(storageRoot)); //Create the storage folder if it doesn't exist
             InputStream inputStream = file.getInputStream();
             Files.copy(inputStream, destinationFile, StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
@@ -111,13 +112,9 @@ public class FileService {
      * @param username    the username of the user trying to create a directory
      * @param parentDirId the id of the parent IF NECESSARY (null if it's at the root)
      */
-    public void makeDirectory(String name, String username, Integer parentDirId) {
+    public File makeDirectory(String name, String username, Integer parentDirId) {
         //Find the correct user who made the directory
-        Optional<User> user = userRepository.findUserByUsername(username);
-        if (user.isEmpty()) {
-            throw new StorageException("L'utilisateur n'existe pas.");
-        }
-        User userFound = user.get();
+        User userFound = getUserEntity(username);
 
         //Get the parent directory or null if it's at the root
         File parentFile = getParentDirectory(parentDirId, userFound);
@@ -130,7 +127,7 @@ public class FileService {
         dirEntity.setPath(hashedFileName);
         dirEntity.setIsLocked(false);
         //Saving one last time when everything is done
-        fileRepository.save(dirEntity);
+        return fileRepository.save(dirEntity);
     }
 
     /**
@@ -140,11 +137,7 @@ public class FileService {
      * @return a Collection<FileGetDTO> with only the informations required
      */
     public Collection<FileGetDTO> obtainFilesFromSpecificDirectory(String username, Integer parentDirId) {
-        Optional<User> user = userRepository.findUserByUsername(username);
-        if (user.isEmpty()) {
-            throw new StorageException("L'utilisateur n'existe pas.");
-        }
-        User userFound = user.get();
+        User userFound = getUserEntity(username);
 
         File parentDir = getParentDirectory(parentDirId, userFound);
         Collection<File> files = fileRepository.findAllByParentDirAndUser(parentDir, userFound);
@@ -170,6 +163,59 @@ public class FileService {
         }
 
         return filesDTO;
+    }
+
+    /**
+     * Get the file resource with the hashed name (path)
+     * @param username the username of the currently connected user
+     * @param fileId the id of the file to get the resource from
+     * @return a file DTO containing the resource (file content), the name and the mime type (file type)
+     */
+    public FileDownloadDTO loadFileAsResource(String username, Integer fileId) {
+        User userFound = getUserEntity(username);
+
+        File fileEntity = fileRepository.findFileById(fileId);
+        validateFile(fileEntity, userFound);
+
+        Path filePath = Paths.get(storageRoot + "/" + fileEntity.getPath()).toAbsolutePath().normalize();
+        Path safeRoot = Paths.get(storageRoot).toAbsolutePath().normalize();
+
+        if (!filePath.startsWith(safeRoot)) {
+            throw new StorageException("Chemin vers le fichier invalide.");
+        }
+        try {
+            String mimeType = Files.probeContentType(Paths.get(fileEntity.getName()));
+            if (mimeType == null) {
+                mimeType = "application/octet-stream";
+            }
+
+            Resource resource = new UrlResource(filePath.toUri());
+            if (!resource.exists() || !resource.isReadable()) {
+                throw new StorageException("Le fichier est introuvable ou illisible.");
+            }
+            return new FileDownloadDTO(resource, fileEntity.getName(), mimeType);
+        } catch (IOException e) {
+            throw new StorageException("Erreur lors de la lecture du fichier.");
+        }
+    }
+
+    /**
+     * Verifies if the file exists and if the user owns it
+     * @param file the targeted file
+     * @param user the targeted user
+     */
+    private void validateFile(File file, User user) {
+        if (file == null) {
+            throw new StorageException("Le fichier n'existe pas.");
+        }
+
+        if (file.getIsLocked()) {
+            throw new StorageException("Vous ne pouvez pas intéragir avec le fichier pour l'instant.");
+        }
+
+        if (!file.getUser().equals(user)) {
+            throw new StorageException("Le fichier n'appartient pas à l'utilisateur.");
+        }
     }
 
     /**
@@ -213,7 +259,6 @@ public class FileService {
         return parentDirectory;
     }
 
-
     public URI generateSignedUrl(User fileOwner, File file) throws NoSuchAlgorithmException, InvalidKeyException {
         String usernameParam = "owner=" + fileOwner.getUsername();
         String durationParam = "duration=" + signedUrlValidDurationMinutes;
@@ -235,4 +280,16 @@ public class FileService {
        return fileRepository.getFileById(fileId);
     }
 
+    /**
+     * Getting the correct user authenticated with their username
+     * @param username the username of the user authenticated
+     * @return the user entity
+     */
+    private User getUserEntity(String username) {
+        Optional<User> user = userRepository.findUserByUsername(username);
+        if (user.isEmpty()) {
+            throw new StorageException("L'utilisateur n'existe pas.");
+        }
+        return user.get();
+    }
 }

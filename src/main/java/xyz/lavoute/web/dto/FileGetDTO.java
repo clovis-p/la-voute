@@ -15,7 +15,7 @@ public class FileGetDTO {
     private String username;
     private Integer parentDirId;
     private String parentDirName;
-    private LocalDate createdOn;
+    private LocalDate date;
     private long size;
 
     public FileGetDTO(File file) {
@@ -25,7 +25,7 @@ public class FileGetDTO {
         this.username = file.getUser().getUsername();
         this.parentDirId = file.getParentDir() != null ? file.getParentDir().getId() : null;
         this.parentDirName = file.getParentDir() != null ? file.getParentDir().getName() : null;
-        this.createdOn = file.getDate();
+        this.date = file.getDate();
         this.size = file.getFileSize();
     }
 }
