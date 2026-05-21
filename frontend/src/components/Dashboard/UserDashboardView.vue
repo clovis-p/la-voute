@@ -157,7 +157,17 @@ function handleTableRowClick(item) {
         <Column field="modifiedAt" header="Modifié le" :sortable="true" />
         <Column header="" style="width: 2.5rem">
           <template #body="{ data }">
-            <Button type="button" outlined severity="secondary" size="small" icon="pi pi-ellipsis-h" @click="toggleFileMenu($event, data)" aria-haspopup="true" aria-controls="overlay_menu" />
+            <Button
+                v-if="!(data.type === 'Folder' && data.name === '../')"
+                type="button"
+                outlined
+                severity="secondary"
+                size="small"
+                icon="pi pi-ellipsis-h"
+                @click="toggleFileMenu($event, data)"
+                aria-haspopup="true"
+                aria-controls="overlay_menu"
+            />
           </template>
         </Column>
       </DataTable>
