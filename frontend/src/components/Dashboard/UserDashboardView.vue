@@ -1,9 +1,12 @@
 <script setup>
-import {Panel, DataTable, Column, Button, Divider, FileUpload, Menu} from "primevue";
+import {Panel, DataTable, Column, Button, Divider, FileUpload, Menu, ConfirmDialog} from "primevue";
+import {useConfirm} from "primevue/useconfirm";
 import axios from 'axios';
 import {computed, onMounted, ref} from "vue";
 import CreateDirectoryModal from "@/components/Dashboard/CreateDirectoryModal.vue";
 import RenameFileModal from "@/components/Dashboard/RenameFileModal.vue";
+
+const confirm = useConfirm();
 
 const typeIcons = {
   Folder: 'pi-folder',
@@ -107,7 +110,20 @@ const fileMenuItems = computed(() => {
         icon: 'pi pi-trash',
         label: 'Supprimer',
         command: () => {
-          console.log(activeFile.value);
+          confirm.require({
+            message: `Voulez-vous vraiment supprimer « ${activeFile.value.name} » ?`,
+            header: 'Confirmation',
+            icon: 'pi pi-exclamation-triangle',
+            acceptLabel: 'Supprimer',
+            rejectLabel: 'Annuler',
+            rejectProps: {
+              severity: 'secondary',
+            },
+            accept: async () => {
+              await axios.delete(`/api/files/${activeFile.value.id}/delete`);
+              obtainFiles();
+            },
+          });
         }
       },
   );
@@ -150,6 +166,7 @@ function handleTableRowClick(item) {
 <template>
   <CreateDirectoryModal :visible="createDirModalActive" :active-dir-id="activeDirId" @refresh-file-list="obtainFiles" @close="createDirModalActive = false" />
   <RenameFileModal :visible="renameModalActive" :file="fileToRename" :active-dir-id="activeDirId" @refresh-file-list="obtainFiles" @close="renameModalActive = false" />
+  <ConfirmDialog />
   <div class="px-2 pt-0 pb-2 flex-1" >
     <Panel class="mb-2 h-full" :pt="{ header: { class: 'hidden!' }, content: { class: 'p-3!' } }" >
       <div class="flex gap-2">
