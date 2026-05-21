@@ -1,7 +1,7 @@
 <script setup>
-import {Panel, DataTable, Column, Button, Divider, FileUpload, Dialog, InputText} from "primevue";
+import {Panel, DataTable, Column, Button, Divider, FileUpload, Menu} from "primevue";
 import axios from 'axios';
-import {onMounted, ref} from "vue";
+import {computed, onMounted, ref} from "vue";
 import CreateDirectoryModal from "@/components/Dashboard/CreateDirectoryModal.vue";
 
 const typeIcons = {
@@ -63,15 +63,61 @@ async function obtainFiles() {
         typeSortKey: fileType === "Folder" ? "0" : "1_" + fileType,
         size: datum.isDirectory? '' : formatFileSize(datum.size),
         sizeBytes: datum.size,
-        modifiedAt: datum.createdOn,
+        modifiedAt: datum.date,
       });
     }
   });
 }
 
+const menu = ref(null);
+const activeFile = ref(null);
+
+const fileMenuItems = computed(() => {
+  if (!activeFile.value) return [];
+  const items = [];
+  if (activeFile.value.type !== "Folder") {
+    items.push({
+      icon: 'pi pi-download',
+      label: 'Télécharger',
+      command: () => {
+        downloadFile(activeFile.value.id);
+      }
+    });
+  }
+  items.push(
+    {
+      icon: 'pi pi-arrows-h',
+      label: 'Déplacer',
+      command: () => {
+        console.log(activeFile.value);
+      }
+    },
+    {
+      icon: 'pi pi-pencil',
+      label: 'Renommer',
+      command: () => {
+        console.log(activeFile.value);
+      }
+    },
+  );
+  return items;
+});
+
+function toggleFileMenu(event, data) {
+  activeFile.value = data;
+  menu.value.toggle(event);
+}
+
+function downloadFile(fileId) {
+  const link = document.createElement('a');
+  link.href = `/api/files/${fileId}/download`;
+  link.click();
+}
+
+
 onMounted(() => {
   obtainFiles();
-})
+});
 
 async function uploadFile(event) {
   for (const file of event.files) {
@@ -109,7 +155,23 @@ function handleTableRowClick(item) {
         <Column field="type" sort-field="typeSortKey" header="Type" :sortable="true" />
         <Column field="size" sort-field="sizeBytes" header="Taille" :sortable="true" />
         <Column field="modifiedAt" header="Modifié le" :sortable="true" />
+        <Column header="" style="width: 2.5rem">
+          <template #body="{ data }">
+            <Button
+                v-if="!(data.type === 'Folder' && data.name === '../')"
+                type="button"
+                outlined
+                severity="secondary"
+                size="small"
+                icon="pi pi-ellipsis-h"
+                @click="toggleFileMenu($event, data)"
+                aria-haspopup="true"
+                aria-controls="overlay_menu"
+            />
+          </template>
+        </Column>
       </DataTable>
+      <Menu ref="menu" id="overlay_menu" :model="fileMenuItems" :popup="true" />
     </Panel>
   </div>
 </template>

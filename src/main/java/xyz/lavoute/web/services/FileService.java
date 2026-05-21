@@ -2,8 +2,11 @@ package xyz.lavoute.web.services;
 
 import org.hashids.Hashids;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import xyz.lavoute.web.dto.FileDownloadDTO;
 import xyz.lavoute.web.dto.FileGetDTO;
 import xyz.lavoute.web.dto.PatchRequest;
 import xyz.lavoute.web.exceptions.StorageException;
@@ -26,7 +29,8 @@ import java.util.Optional;
 @Service
 public class FileService {
 
-    private final Path storageRoot = Path.of("storage");
+    @Value("${storage.root}")
+    private String storageRoot;
     private final UserRepository userRepository;
     private final FileRepository fileRepository;
 
@@ -73,9 +77,9 @@ public class FileService {
         fileRepository.save(fileEntity);
 
         //Putting the file in the storage
-        Path destinationFile = this.storageRoot.resolve(hashedFileName);
+        Path destinationFile = Path.of(this.storageRoot).resolve(hashedFileName);
         try {
-            Files.createDirectories(storageRoot); //Create the storage folder if it doesn't exist
+            Files.createDirectories(Path.of(storageRoot)); //Create the storage folder if it doesn't exist
             InputStream inputStream = file.getInputStream();
             Files.copy(inputStream, destinationFile, StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
@@ -93,7 +97,7 @@ public class FileService {
      * @param username    the username of the user trying to create a directory
      * @param parentDirId the id of the parent IF NECESSARY (null if it's at the root)
      */
-    public void makeDirectory(String name, String username, Integer parentDirId) {
+    public File makeDirectory(String name, String username, Integer parentDirId) {
         //Find the correct user who made the directory
         User userFound = getUserEntity(username);
 
@@ -108,7 +112,7 @@ public class FileService {
         dirEntity.setPath(hashedFileName);
         dirEntity.setIsLocked(false);
         //Saving one last time when everything is done
-        fileRepository.save(dirEntity);
+        return fileRepository.save(dirEntity);
     }
 
     /**
@@ -236,6 +240,40 @@ public class FileService {
         }
         fileRepository.delete(file);
     }
+  
+    /*
+     * Get the file resource with the hashed name (path)
+     * @param username the username of the currently connected user
+     * @param fileId the id of the file to get the resource from
+     * @return a file DTO containing the resource (file content), the name and the mime type (file type)
+     */
+    public FileDownloadDTO loadFileAsResource(String username, Integer fileId) {
+        User userFound = getUserEntity(username);
+
+        File fileEntity = fileRepository.findFileById(fileId);
+        validateFile(fileEntity, userFound);
+
+        Path filePath = Paths.get(storageRoot + "/" + fileEntity.getPath()).toAbsolutePath().normalize();
+        Path safeRoot = Paths.get(storageRoot).toAbsolutePath().normalize();
+
+        if (!filePath.startsWith(safeRoot)) {
+            throw new StorageException("Chemin vers le fichier invalide.");
+        }
+        try {
+            String mimeType = Files.probeContentType(Paths.get(fileEntity.getName()));
+            if (mimeType == null) {
+                mimeType = "application/octet-stream";
+            }
+
+            Resource resource = new UrlResource(filePath.toUri());
+            if (!resource.exists() || !resource.isReadable()) {
+                throw new StorageException("Le fichier est introuvable ou illisible.");
+            }
+            return new FileDownloadDTO(resource, fileEntity.getName(), mimeType);
+        } catch (IOException e) {
+            throw new StorageException("Erreur lors de la lecture du fichier.");
+        }
+    }
 
     /**
      * Called when you need to hash the id of a file or directory
@@ -299,9 +337,9 @@ public class FileService {
     }
 
     /**
-     * Obtain the user entity from the username authenticated
+     * Getting the correct user authenticated with their username
      * @param username the username of the user authenticated
-     * @return the entity of the user
+     * @return the user entity
      */
     private User getUserEntity(String username) {
         Optional<User> user = userRepository.findUserByUsername(username);

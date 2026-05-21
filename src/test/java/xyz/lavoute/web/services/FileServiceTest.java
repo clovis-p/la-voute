@@ -1,8 +1,10 @@
 package xyz.lavoute.web.services;
 
+import org.aspectj.util.Reflection;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -10,6 +12,7 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.core.parameters.P;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.multipart.MultipartFile;
+import xyz.lavoute.web.dto.FileDownloadDTO;
 import xyz.lavoute.web.dto.FileGetDTO;
 import xyz.lavoute.web.dto.PatchRequest;
 import xyz.lavoute.web.exceptions.StorageException;
@@ -19,6 +22,8 @@ import xyz.lavoute.web.repositories.FileRepository;
 import xyz.lavoute.web.repositories.UserRepository;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -46,6 +51,7 @@ public class FileServiceTest {
     @BeforeEach
     void setUp() {
         ReflectionTestUtils.setField(fileService, "hashidsSalt", "ASDKFJ87276dhfuFDH27");
+        ReflectionTestUtils.setField(fileService, "storageRoot", "storage");
 
         mockUser = new User("TestUser", "Test", "User", "Password1!");
         mockParentDir = new File("storage", "testFolder", true, false, mockUser, null);
@@ -54,7 +60,7 @@ public class FileServiceTest {
     }
 
     /**
-     * Tests for all the possible exceptions
+     * Tests for all the possible exceptions when uploading a file
      */
     @Test
     void shouldThrowStorageException_whenFileIsEmpty() {
@@ -65,7 +71,7 @@ public class FileServiceTest {
     }
 
     @Test
-    void shouldThrowStorageException_whenOriginalFileNameIsNull() {
+    void shouldThrowStorageException_whenOriginalFileNameIsBlank() {
         MockMultipartFile nullNameFile = new MockMultipartFile("file", null, "text/plain", "empty".getBytes());
 
         assertThrows(StorageException.class, () -> {
@@ -124,7 +130,7 @@ public class FileServiceTest {
 
 
     /**
-     * Tests for when it's working
+     * Tests for when it's working (uploading a file)
      */
     @Test
     void shouldSaveFile_whenNoParentDir() {
@@ -409,5 +415,111 @@ public class FileServiceTest {
         verify(fileRepository).delete(child1);
         verify(fileRepository).delete(child2);
         verify(fileRepository).delete(parentDir);
+
+    @Test
+    void shouldIncludeGrandParentDir_whenParentDirHasAParent() {
+        File grandParentDir = new File("storage", "grandparent", true, false, mockUser, null);
+        File parentDir = new File("storage", "parent", true, false, mockUser, grandParentDir);
+
+        when(userRepository.findUserByUsername("testUser")).thenReturn(Optional.ofNullable(mockUser));
+        when(fileRepository.findFileById(1)).thenReturn(parentDir);
+        when(fileRepository.findAllByParentDirAndUser(parentDir, mockUser)).thenReturn(List.of());
+
+        Collection<FileGetDTO> result = fileService.obtainFilesFromSpecificDirectory("testUser", 1);
+
+        assertEquals(1, result.size());
+        assertEquals("../", result.iterator().next().getName());
+    }
+
+    @Test
+    void shouldAppendSlash_whenFileIsADirectory() {
+        File parentDir = new File("storage", "parent", true, false, mockUser, null);
+        File subDir = new File("storage", "subFolder", true, false, mockUser, parentDir);
+
+        when(userRepository.findUserByUsername("testUser")).thenReturn(Optional.of(mockUser));
+        when(fileRepository.findFileById(1)).thenReturn(parentDir);
+        when(fileRepository.findAllByParentDirAndUser(parentDir, mockUser)).thenReturn(List.of(subDir));
+
+        Collection<FileGetDTO> result = fileService.obtainFilesFromSpecificDirectory("testUser", 1);
+
+        // "../" + "subFolder/"
+        assertEquals(2, result.size());
+        assertTrue(result.stream().anyMatch(fileGetDTO -> fileGetDTO.getName().equals("../")));
+    }
+      
+    /**
+     * Tests for loading a file as resource when it's not working (exceptions)
+     */
+    @Test
+    void shouldThrowStorageException_whenFileDoesNotExistOnDisk() {
+        File fileEntity = new File("storage", "missing.txt", false, false, mockUser, null);
+        fileEntity.setId(1);
+        fileEntity.setPath("nonExistentPath/missing.txt");
+
+        when(userRepository.findUserByUsername("testUser")).thenReturn(Optional.of(mockUser));
+        when(fileRepository.findFileById(1)).thenReturn(fileEntity);
+
+        ReflectionTestUtils.setField(fileService, "storageRoot", "/nonexistent");
+
+        assertThrows(StorageException.class, () ->
+                fileService.loadFileAsResource("testUser", 1));
+    }
+
+    @Test
+    void shouldThrowStorageException_whenPathTraversalDetected(@TempDir Path tempDir) {
+        File fileEntity = new File(tempDir.toString(), "malicious.txt", false, false, mockUser, null);
+        fileEntity.setId(1);
+        fileEntity.setPath("../../etc/passwd");
+
+        when(userRepository.findUserByUsername("testUser")).thenReturn(Optional.of(mockUser));
+        when(fileRepository.findFileById(1)).thenReturn(fileEntity);
+
+        ReflectionTestUtils.setField(fileService, "storageRoot", tempDir.toString());
+
+        assertThrows(StorageException.class, () ->
+                fileService.loadFileAsResource("testUser", 1));
+    }
+
+    /**
+     * Tests for loading a file as resource when it works
+     */
+    @Test
+    void shouldReturnFileDownloadDTO_whenFileExistsOnDisk(@TempDir Path tempDir) throws IOException {
+        Path tempFile = tempDir.resolve("testFile.txt");
+        Files.writeString(tempFile, "test content");
+
+        File fileEntity = new File(tempDir.toString(), "testFile.txt", false, false, mockUser, null);
+        fileEntity.setId(1);
+        fileEntity.setPath("testFile.txt");
+
+        when(userRepository.findUserByUsername("testUser")).thenReturn(Optional.of(mockUser));
+        when(fileRepository.findFileById(1)).thenReturn(fileEntity);
+
+        ReflectionTestUtils.setField(fileService, "storageRoot", tempDir.toString());
+
+        FileDownloadDTO result = fileService.loadFileAsResource("testUser", 1);
+
+        assertNotNull(result);
+        assertEquals("testFile.txt", result.getFileName());
+        assertTrue(result.getResource().exists());
+    }
+
+    @Test
+    void shouldUseDefaultMimeType_whenMimeTypeIsUnknown(@TempDir Path tempDir) throws IOException {
+        Path tempFile = tempDir.resolve("testFile.xyz");
+        Files.writeString(tempFile, "test content");
+
+        File fileEntity = new File(tempDir.toString(), "testFile.xyz", false, false, mockUser, null);
+        fileEntity.setId(1);
+        fileEntity.setPath("testFile.xyz");
+
+        when(userRepository.findUserByUsername("testUser")).thenReturn(Optional.of(mockUser));
+        when(fileRepository.findFileById(1)).thenReturn(fileEntity);
+
+        ReflectionTestUtils.setField(fileService, "storageRoot", tempDir.toString());
+
+        FileDownloadDTO result = fileService.loadFileAsResource("testUser", 1);
+
+        assertEquals("application/octet-stream", result.getMimeType());
     }
 }
