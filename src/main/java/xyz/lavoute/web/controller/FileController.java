@@ -1,16 +1,19 @@
 package xyz.lavoute.web.controller;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import xyz.lavoute.web.dto.FileDownloadDTO;
 import xyz.lavoute.web.dto.FileGetDTO;
 import xyz.lavoute.web.exceptions.Error;
 import xyz.lavoute.web.exceptions.StorageException;
 import xyz.lavoute.web.services.FileService;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 
 @RestController
@@ -60,6 +63,25 @@ public class FileController {
         String username = auth.getName();
 
         return fileService.obtainFilesFromSpecificDirectory(username, parentDirId);
+    }
+
+    @GetMapping("/{id}/download")
+    public ResponseEntity<Resource> downloadFile(@PathVariable Integer id) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String username = auth.getName();
+
+        FileDownloadDTO downloadDTO = fileService.loadFileAsResource(username, id);
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(downloadDTO.getMimeType()))
+                .header(
+                        HttpHeaders.CONTENT_DISPOSITION,
+                        ContentDisposition.attachment()
+                                .filename(downloadDTO.getFileName(), StandardCharsets.UTF_8)
+                                .build()
+                                .toString()
+                )
+                .body(downloadDTO.getResource());
     }
 
     @ExceptionHandler(StorageException.class)
