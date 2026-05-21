@@ -132,6 +132,7 @@ public class FileService {
         }
         else if (parentDir != null) {
             parentParentDir = new File("storage", null, true, false, userFound, null);
+            parentParentDir.setId(null);
         }
         Collection<FileGetDTO> filesDTO = new ArrayList<>();
         //Make all the files found into the DTO to not send back useless information

@@ -15,7 +15,7 @@ import java.time.LocalDate;
 public class File {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    private Integer id;
 
     // C'est le id hasher
     private String path;

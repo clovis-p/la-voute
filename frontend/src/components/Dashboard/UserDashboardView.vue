@@ -3,6 +3,7 @@ import {Panel, DataTable, Column, Button, Divider, FileUpload, Menu} from "prime
 import axios from 'axios';
 import {computed, onMounted, ref} from "vue";
 import CreateDirectoryModal from "@/components/Dashboard/CreateDirectoryModal.vue";
+import RenameFileModal from "@/components/Dashboard/RenameFileModal.vue";
 
 const typeIcons = {
   Folder: 'pi-folder',
@@ -18,6 +19,8 @@ const typeIcons = {
 const files = ref([]);
 const activeDirId = ref(null);
 const createDirModalActive = ref(false);
+const renameModalActive = ref(false);
+const fileToRename = ref(null);
 
 function formatFileSize(bytes) {
   if (bytes < 1024) return bytes + ' o';
@@ -85,20 +88,28 @@ const fileMenuItems = computed(() => {
     });
   }
   items.push(
-    {
-      icon: 'pi pi-arrows-h',
-      label: 'Déplacer',
-      command: () => {
-        console.log(activeFile.value);
-      }
-    },
-    {
-      icon: 'pi pi-pencil',
-      label: 'Renommer',
-      command: () => {
-        console.log(activeFile.value);
-      }
-    },
+      {
+        icon: 'pi pi-arrows-h',
+        label: 'Déplacer',
+        command: () => {
+          console.log(activeFile.value);
+        }
+      },
+      {
+        icon: 'pi pi-pencil',
+        label: 'Renommer',
+        command: () => {
+          fileToRename.value = activeFile.value;
+          renameModalActive.value = true;
+        }
+      },
+      {
+        icon: 'pi pi-trash',
+        label: 'Supprimer',
+        command: () => {
+          console.log(activeFile.value);
+        }
+      },
   );
   return items;
 });
@@ -138,6 +149,7 @@ function handleTableRowClick(item) {
 
 <template>
   <CreateDirectoryModal :visible="createDirModalActive" :active-dir-id="activeDirId" @refresh-file-list="obtainFiles" @close="createDirModalActive = false" />
+  <RenameFileModal :visible="renameModalActive" :file="fileToRename" :active-dir-id="activeDirId" @refresh-file-list="obtainFiles" @close="renameModalActive = false" />
   <div class="px-2 pt-0 pb-2 flex-1" >
     <Panel class="mb-2 h-full" :pt="{ header: { class: 'hidden!' }, content: { class: 'p-3!' } }" >
       <div class="flex gap-2">
