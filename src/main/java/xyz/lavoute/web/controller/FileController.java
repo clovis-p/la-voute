@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import xyz.lavoute.web.dto.FileDownloadDTO;
 import xyz.lavoute.web.dto.FileGetDTO;
+import xyz.lavoute.web.dto.PatchRequest;
 import xyz.lavoute.web.exceptions.Error;
 import xyz.lavoute.web.exceptions.StorageException;
 import xyz.lavoute.web.services.FileService;
@@ -65,6 +66,30 @@ public class FileController {
         return fileService.obtainFilesFromSpecificDirectory(username, parentDirId);
     }
 
+    /**
+     * Can be used for renaming and moving a file
+     * @param id the id of the file to patch
+     * @param request a record containing the newName or the newParentId
+     * @return a FileGetDTO with the new information
+     */
+    @PatchMapping("/{id}")
+    public FileGetDTO patchFile(@PathVariable int id, @RequestBody PatchRequest request) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String username = auth.getName();
+
+        return fileService.patchFile(id, request, username);
+    }
+
+    @DeleteMapping("/{id}/delete")
+    public ResponseEntity<Integer> deleteFile(@PathVariable int id) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String username = auth.getName();
+
+        fileService.deleteFile(id, username);
+
+        return ResponseEntity.status(HttpStatus.ACCEPTED).build();
+    }
+  
     @GetMapping("/{id}/download")
     public ResponseEntity<Resource> downloadFile(@PathVariable Integer id) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();

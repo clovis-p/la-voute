@@ -5,6 +5,7 @@ import App from './App.vue';
 import PrimeVue from 'primevue/config';
 import Aura from '@primeuix/themes/aura';
 import {definePreset} from "@primeuix/themes";
+import ConfirmationService from 'primevue/confirmationservice';
 import router from './router.js';
 import axios from 'axios';
 
@@ -45,5 +46,6 @@ app.use(PrimeVue, {
         preset: customPreset
     }
 });
+app.use(ConfirmationService);
 app.use(router);
 app.mount('#app');
