@@ -415,6 +415,7 @@ public class FileServiceTest {
         verify(fileRepository).delete(child1);
         verify(fileRepository).delete(child2);
         verify(fileRepository).delete(parentDir);
+    }
 
     @Test
     void shouldIncludeGrandParentDir_whenParentDirHasAParent() {
