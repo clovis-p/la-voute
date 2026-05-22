@@ -20,6 +20,6 @@ public class ShareService {
     }
 
     public List<Share> findSharesByFile(File file) {
-        return shareRepository.getSharesByFileId(file.getId());
+        return shareRepository.findSharesByFileId(file);
     }
 }

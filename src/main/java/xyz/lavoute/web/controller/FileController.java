@@ -123,6 +123,8 @@ public class FileController {
 
     }
 
+    // IMPORTANT Si le endpoint marche pas c'est probablement que Spring Boot n'autorise pas les requests autre que GET avec un ancien csrf token.
+    // Donc quand on hit "/login" il ne faut pas oublier de redemander le nouveau csrf avec "/api/csrf"
     @PostMapping("share/{fileId}/create")
     public ResponseEntity<Void> fileSharing(
             @PathVariable int fileId,
@@ -133,6 +135,12 @@ public class FileController {
         if (file.isEmpty()) {
             throw new FileNotFoundException();
         }
+
+        Authentication auth = SecurityContextHolder
+                .getContext()
+                .getAuthentication();
+        String connectedUsername = auth.getName();
+        LOGGER.info("Connected user named: " + connectedUsername + " is attempting to share file with id: " + fileId);
 
         if (usernames == null) {
             Share share = new Share(null, file.get());
@@ -169,7 +177,7 @@ public class FileController {
                 .build();
     }
 
-    @GetMapping("share/{fileId}")
+    @GetMapping("{fileId}")
     public ResponseEntity<FileGetDTO> getSharedFile(
             @PathVariable int fileId,
             Principal principal
@@ -179,6 +187,8 @@ public class FileController {
 
         if (maybeFile.isEmpty()) throw new FileNotFoundException();
         if (maybeUser.isEmpty()) throw new UsernameNotFoundException(principal.getName());
+
+        LOGGER.info("Connected user with id: " + maybeUser.get().getId() + " is attempting to request a file with id: " + fileId);
 
         ResponseEntity<FileGetDTO> response = ResponseEntity
                 .status(HttpStatus.OK)
@@ -216,6 +226,8 @@ public class FileController {
                 .toList();
 
         for (Permission filePermission : filePermissions) {
+            if (filePermission == null) return false;
+
             User user = filePermission.getUser();
             if (connectedUser.getId() == user.getId()) return true;
         }
