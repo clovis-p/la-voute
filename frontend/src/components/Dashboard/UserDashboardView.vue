@@ -1,5 +1,5 @@
 <script setup>
-import {Panel, DataTable, Column, Button, Divider, FileUpload, Menu} from "primevue";
+import {Panel, DataTable, Column, Button, Divider, FileUpload, Menu, ProgressBar, ProgressSpinner} from "primevue";
 import axios from 'axios';
 import {computed, onMounted, ref} from "vue";
 import CreateDirectoryModal from "@/components/Dashboard/CreateDirectoryModal.vue";
@@ -26,6 +26,7 @@ const fileToMove = ref(null);
 const movingFile = ref(false);
 const deleteModalActive = ref(false);
 const fileToDelete = ref(null);
+const uploadProgress = ref(null);
 
 function formatFileSize(bytes) {
   if (bytes < 1024) return bytes + ' o';
@@ -137,11 +138,30 @@ onMounted(() => {
 });
 
 async function uploadFile(event) {
+  let totalBytes = 0;
   for (const file of event.files) {
-    const formData = new FormData();
-    formData.append('file', file);
-    await axios.post('/api/files/upload' + (activeDirId.value ? '?parentDirId=' + activeDirId.value : ''), formData);
+    totalBytes += file.size;
   }
+  const loadedPerFile = new Array(event.files.length).fill(0);
+  uploadProgress.value = 0;
+  const url = '/api/files/upload' + (activeDirId.value ? '?parentDirId=' + activeDirId.value : '');
+  const requests = [];
+  for (let i = 0; i < event.files.length; i++) {
+    const formData = new FormData();
+    formData.append('file', event.files[i]);
+    requests.push(axios.post(url, formData, {
+      onUploadProgress: (progressEvent) => {
+        loadedPerFile[i] = progressEvent.loaded;
+        let totalLoaded = 0;
+        for (const loaded of loadedPerFile) {
+          totalLoaded += loaded;
+        }
+        uploadProgress.value = Math.round((totalLoaded * 100) / totalBytes);
+      }
+    }));
+  }
+  await Promise.all(requests);
+  uploadProgress.value = null;
   obtainFiles();
 }
 
@@ -176,6 +196,12 @@ function handleTableRowClick(item) {
       <div class="flex gap-2">
         <FileUpload v-if="!fileToMove" mode="basic" :auto="true" :multiple="true" choose-icon="pi pi-cloud-upload" choose-label="Téléverser" custom-upload @uploader="uploadFile"/>
         <Button v-if="!fileToMove" label="Nouveau dossier" icon="pi pi-folder-plus" severity="secondary" @click="createDirModalActive = true" />
+        <span v-if="uploadProgress != null" class="flex">
+          <span class="flex self-center mx-2">
+            <i class="pi pi-spin pi-spinner" style="font-size: 1.5rem"></i>
+          </span>
+          <ProgressBar :value="uploadProgress" class="my-auto w-100 mx-2" />
+        </span>
         <Button v-if="fileToMove" :label="`Déplacer ${fileToMove.name} ici`" icon="pi pi-arrow-right" :loading="movingFile" @click="moveFileHere" />
         <Button v-if="fileToMove" label="Annuler" severity="secondary" @click="fileToMove = null" />
       </div>
