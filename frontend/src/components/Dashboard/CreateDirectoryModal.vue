@@ -24,7 +24,7 @@ async function handleCreate() {
 </script>
 
 <template>
-  <Dialog v-model:visible="props.visible" modal header="Créer un dossier" :style="{ width: '25rem' }" :close-on-escape="false" @keydown.enter.prevent="handleCreate" @keydown.escape.prevent="emit('close')">
+  <Dialog v-model:visible="props.visible" modal header="Créer un dossier" :style="{ width: '25rem', maxWidth: '90vw' }" :close-on-escape="false" @keydown.enter.prevent="handleCreate" @keydown.escape.prevent="emit('close')">
     <div class="flex items-center gap-4 mb-4">
       <label for="name" class="font-semibold w-24">Nom</label>
       <InputText id="name" v-model="name" class="flex-auto" autocomplete="off" autofocus />
