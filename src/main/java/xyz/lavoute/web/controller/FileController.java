@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import xyz.lavoute.web.dto.FileDownloadDTO;
 import xyz.lavoute.web.dto.FileGetDTO;
+import xyz.lavoute.web.dto.FileVisibilityDTO;
 import xyz.lavoute.web.dto.PatchRequest;
 import xyz.lavoute.web.exceptions.Error;
 import xyz.lavoute.web.exceptions.NoOwnershipOnSharedFileException;
@@ -167,6 +168,8 @@ public class FileController {
         String connectedUsername = auth.getName();
         LOGGER.info("Connected user named: " + connectedUsername + " is attempting to share file with id: " + fileId);
 
+        shareService.deleteSharesByFile(file.get());
+
         if (usernames == null) {
             Share share = new Share(null, file.get());
             shareService.saveShare(share);
@@ -208,16 +211,21 @@ public class FileController {
             Principal principal
     ) throws FileNotFoundException {
         Optional<File> maybeFile = fileService.getFileById(fileId);
-        Optional<User> maybeUser = userService.getUserByUsername(principal.getName());
 
         if (maybeFile.isEmpty()) throw new FileNotFoundException();
-        if (maybeUser.isEmpty()) throw new UsernameNotFoundException(principal.getName());
-
-        LOGGER.info("Connected user with id: " + maybeUser.get().getId() + " is attempting to request a file with id: " + fileId);
 
         ResponseEntity<FileGetDTO> response = ResponseEntity
                 .status(HttpStatus.OK)
                 .body(new FileGetDTO(maybeFile.get()));
+
+        if (fileIsPublic(maybeFile.get())) {
+            LOGGER.info("Returned public file dto with id: " + fileId);
+            return response;
+        }
+
+        Optional<User> maybeUser = userService.getUserByUsername(principal.getName());
+        if (maybeUser.isEmpty()) throw new UsernameNotFoundException(principal.getName());
+        LOGGER.info("Authenticated user with id: " + maybeUser.get().getId() + " is attempting to request a file with id: " + fileId);
 
         if (userIsFileOwner(maybeUser.get(), maybeFile.get())) {
             LOGGER.info("Returned file dto with id: " + fileId + " to owner with id:" + maybeUser.get().getId());
@@ -225,10 +233,6 @@ public class FileController {
         }
         if (userHasPermissionOnFile(maybeUser.get(), maybeFile.get())) {
             LOGGER.info("Returned file dto with id: " + fileId + " to connected user with id: " + maybeUser.get().getId() + " that has permission");
-            return response;
-        }
-        if (fileIsPublic(maybeFile.get())) {
-            LOGGER.info("Returned file dto with id: " + fileId + " to connected user with id: " + maybeUser.get().getId() + " because the file is public");
             return response;
         }
 
