@@ -6,10 +6,16 @@ import axios from "axios";
 const props = defineProps(['visible', 'activeDirId']);
 const emit = defineEmits(['close', 'refreshFileList']);
 const name = ref('');
+const loading = ref(false);
 
 async function handleCreate() {
   if (name.value.length > 0) {
-    await axios.post("/api/files/directory?directoryName=" + name.value + (props.activeDirId ? "&parentDirId=" + props.activeDirId : ''));
+    loading.value = true;
+    try {
+      await axios.post("/api/files/directory?directoryName=" + name.value + (props.activeDirId ? "&parentDirId=" + props.activeDirId : ''));
+    } finally {
+      loading.value = false;
+    }
   }
   name.value = '';
   emit('refreshFileList');
@@ -25,7 +31,7 @@ async function handleCreate() {
     </div>
     <div class="flex justify-end gap-2">
       <Button type="button" label="Annuler" severity="secondary" @click="emit('close')"></Button>
-      <Button type="button" label="Créer" @click="handleCreate"></Button>
+      <Button type="button" label="Créer" :loading="loading" @click="handleCreate"></Button>
     </div>
   </Dialog>
 </template>
