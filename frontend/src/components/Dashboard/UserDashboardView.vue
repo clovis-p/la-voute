@@ -1,10 +1,11 @@
 <script setup>
-import {Panel, DataTable, Column, Button, Divider, FileUpload, Menu, ConfirmDialog} from "primevue";
+import {Panel, DataTable, Column, Button, Divider, FileUpload, Menu, ConfirmDialog, Dialog} from "primevue";
 import {useConfirm} from "primevue/useconfirm";
 import axios from 'axios';
 import {computed, onMounted, ref} from "vue";
 import CreateDirectoryModal from "@/components/Dashboard/CreateDirectoryModal.vue";
 import RenameFileModal from "@/components/Dashboard/RenameFileModal.vue";
+import ShareFileModal from "@/components/Dashboard/ShareFileModal.vue";
 
 const confirm = useConfirm();
 
@@ -25,6 +26,8 @@ const createDirModalActive = ref(false);
 const renameModalActive = ref(false);
 const fileToRename = ref(null);
 const fileToMove = ref(null);
+const shareModalActive = ref(false);
+const fileToShare = ref(null);
 
 function formatFileSize(bytes) {
   if (bytes < 1024) return bytes + ' o';
@@ -92,6 +95,14 @@ const fileMenuItems = computed(() => {
     });
   }
   items.push(
+      {
+        icon: 'pi pi-share-alt',
+        label: 'Partager',
+        command: () => {
+          fileToShare.value = activeFile.value;
+          shareModalActive.value = true;
+        }
+      },
       {
         icon: 'pi pi-arrows-h',
         label: 'Déplacer',
@@ -176,6 +187,7 @@ function handleTableRowClick(item) {
 <template>
   <CreateDirectoryModal :visible="createDirModalActive" :active-dir-id="activeDirId" @refresh-file-list="obtainFiles" @close="createDirModalActive = false" />
   <RenameFileModal :visible="renameModalActive" :file="fileToRename" :active-dir-id="activeDirId" @refresh-file-list="obtainFiles" @close="renameModalActive = false" />
+  <ShareFileModal :visible="shareModalActive" :file="fileToShare" @close="shareModalActive = false" />
   <ConfirmDialog />
   <div class="px-2 pt-0 pb-2 flex-1" >
     <Panel class="mb-2 h-full" :pt="{ header: { class: 'hidden!' }, content: { class: 'p-3!' } }" >
