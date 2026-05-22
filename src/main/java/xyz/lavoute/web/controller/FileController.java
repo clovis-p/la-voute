@@ -205,6 +205,49 @@ public class FileController {
                 .build();
     }
 
+    @GetMapping("{fileId}/visibility")
+    public ResponseEntity<FileVisibilityDTO> getFileVisibility(@PathVariable int fileId) throws FileNotFoundException {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String username = auth.getName();
+
+        Optional<File> file = fileService.getFileById(fileId);
+        Optional<User> user = userService.getUserByUsername(username);
+
+        if (file.isEmpty()) {
+            throw new FileNotFoundException();
+        }
+        if (user.isEmpty()) {
+            throw new UsernameNotFoundException(username);
+        }
+
+        if (!userIsFileOwner(user.get(), file.get())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        List<Share> shares = shareService.findSharesByFile(file.get());
+
+        boolean isPublic = false;
+        for (Share share : shares) {
+            if (share.getPermsId() == null) {
+                isPublic = true;
+                break;
+            }
+        }
+
+        if (isPublic) {
+            return ResponseEntity.ok(new FileVisibilityDTO("public", null));
+        }
+
+        List<String> usernames = shares.stream()
+                .map(share -> share.getPermsId().getUser().getUsername())
+                .toList();
+
+        return ResponseEntity.ok(new FileVisibilityDTO(
+                "private",
+                usernames.isEmpty() ? null : usernames
+        ));
+    }
+
     @GetMapping("{fileId}")
     public ResponseEntity<FileGetDTO> getSharedFile(
             @PathVariable int fileId,
