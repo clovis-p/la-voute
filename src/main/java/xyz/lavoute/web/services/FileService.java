@@ -8,9 +8,9 @@ import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import xyz.lavoute.web.dto.FileDownloadDTO;
 import xyz.lavoute.web.dto.FileGetDTO;
+import xyz.lavoute.web.dto.PatchRequest;
 import xyz.lavoute.web.exceptions.StorageException;
 import xyz.lavoute.web.models.File;
 import xyz.lavoute.web.models.User;
@@ -27,6 +27,7 @@ import java.nio.file.StandardCopyOption;
 
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Optional;
@@ -147,6 +148,7 @@ public class FileService {
         }
         else if (parentDir != null) {
             parentParentDir = new File("storage", null, true, false, userFound, null);
+            parentParentDir.setId(null);
         }
         Collection<FileGetDTO> filesDTO = new ArrayList<>();
         //Make all the files found into the DTO to not send back useless information
@@ -166,6 +168,97 @@ public class FileService {
     }
 
     /**
+     * Delete a selected file
+     * @param fileId the id of the file to delete
+     * @param username the username of the user trying to delete a file
+     */
+    public void deleteFile(int fileId, String username) {
+        User userFound = getUserEntity(username);
+
+        File fileEntity = fileRepository.findFileById(fileId);
+        validateFileExistence(fileEntity);
+        validateFile(fileEntity, userFound);
+
+        deleteRecursive(fileEntity, userFound);
+    }
+
+    /**
+     * Called when you need to patch a file
+     * @param fileId the id of the file to patch
+     * @param patchRequest a record containing a new name and a new parent dir id
+     * @param username the username of the connected user
+     * @return a filegetdto with the new information
+     */
+    public FileGetDTO patchFile(int fileId, PatchRequest patchRequest, String username) {
+        User userFound = getUserEntity(username);
+
+        File fileEntity = fileRepository.findFileById(fileId);
+        validateFileExistence(fileEntity);
+        validateFile(fileEntity, userFound);
+
+        if (patchRequest.newName() == null) {
+            throw new StorageException("Le nom du fichier ne peut pas être null.");
+        }
+
+        renameFile(fileEntity, patchRequest.newName());
+        moveFile(fileEntity, patchRequest.newParentId(), userFound);
+
+        fileRepository.save(fileEntity);
+
+        return new FileGetDTO(fileEntity);
+    }
+
+    /**
+     * Renaming a file in the database
+     * @param fileEntity the id of the file to rename
+     * @param newName the new name of the file
+     */
+    private void renameFile(File fileEntity, String newName) {
+        fileEntity.setName(newName);
+        fileEntity.setDate(LocalDate.now());
+    }
+
+    /**
+     * called when moving a file in the database
+     * @param fileEntityToMove the file to move
+     * @param newParentId the new parentId to give
+     * @param userFound the connected user
+     */
+    public void moveFile(File fileEntityToMove, Integer newParentId, User userFound) {
+        File fileEntityNewParent = getParentDirectory(newParentId, userFound);
+
+        if (fileEntityNewParent != null) {
+            validateFileExistence(fileEntityNewParent);
+            validateFile(fileEntityNewParent, userFound);
+        }
+
+        fileEntityToMove.setParentDir(fileEntityNewParent);
+    }
+
+    /**
+     * Recursive method to delete a file/folder and all it's children if it owns any
+     * @param file the file we need to delete / delete its children
+     * @param user the user just to be sure we only delete files associated to the user (shouldn't happen, but we never know)
+     */
+    private void deleteRecursive(File file, User user) {
+        Collection<File> children = fileRepository.findAllByParentDirAndUser(file, user);
+
+        for (File child : children) {
+            deleteRecursive(child, user);
+        }
+
+        if (!file.getIsDirectory()) {
+            try {
+                Path filePath = Paths.get(storageRoot.toString(), file.getPath()).toAbsolutePath();
+                Files.deleteIfExists(filePath);
+            } catch (IOException e) {
+                throw new StorageException("Erreur lors de la suppression du fichier du disque.");
+            }
+        }
+        fileRepository.delete(file);
+    }
+  
+    /*
      * Get the file resource with the hashed name (path)
      * @param username the username of the currently connected user
      * @param fileId the id of the file to get the resource from
@@ -196,25 +289,6 @@ public class FileService {
             return new FileDownloadDTO(resource, fileEntity.getName(), mimeType);
         } catch (IOException e) {
             throw new StorageException("Erreur lors de la lecture du fichier.");
-        }
-    }
-
-    /**
-     * Verifies if the file exists and if the user owns it
-     * @param file the targeted file
-     * @param user the targeted user
-     */
-    private void validateFile(File file, User user) {
-        if (file == null) {
-            throw new StorageException("Le fichier n'existe pas.");
-        }
-
-        if (file.getIsLocked()) {
-            throw new StorageException("Vous ne pouvez pas intéragir avec le fichier pour l'instant.");
-        }
-
-        if (!file.getUser().equals(user)) {
-            throw new StorageException("Le fichier n'appartient pas à l'utilisateur.");
         }
     }
 
@@ -259,25 +333,29 @@ public class FileService {
         return parentDirectory;
     }
 
-    public URI generateSignedUrl(User fileOwner, File file) throws NoSuchAlgorithmException, InvalidKeyException {
-        String usernameParam = "owner=" + fileOwner.getUsername();
-        String durationParam = "duration=" + signedUrlValidDurationMinutes;
-        String dataToEncode = usernameParam + "&" + durationParam;
-
-        String signature = cryptoService.generate_HMAC_SHA256_Signature(dataToEncode);
-
-        return ServletUriComponentsBuilder
-                .fromCurrentRequest()
-                .path(file.getName())
-                .queryParam("owner", fileOwner.getUsername())
-                .queryParam("expiration", signedUrlValidDurationMinutes)
-                .queryParam("signature", signature)
-                .buildAndExpand()
-                .toUri();
-    }
 
     public Optional<File> getFileById(int fileId) {
-       return fileRepository.getFileById(fileId);
+        return fileRepository.getFileById(fileId);
+    }
+
+    private void validateFile(File file, User user) {
+        if (file.getIsLocked()) {
+            throw new StorageException("Vous ne pouvez pas intéragir avec le fichier pour l'instant.");
+        }
+
+        if (!file.getUser().equals(user)) {
+            throw new StorageException("Le fichier n'appartient pas à l'utilisateur.");
+        }
+    }
+
+    /**
+     * Validate the existence of a file (had to separate it from the other validation for the moving case)
+     * @param file the file to validate
+     */
+    private void validateFileExistence(File file) {
+        if (file == null) {
+            throw new StorageException("Le fichier n'existe pas.");
+        }
     }
 
     /**

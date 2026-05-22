@@ -9,7 +9,7 @@ import java.time.LocalDate;
 @Getter
 @Setter
 public class FileGetDTO {
-    private int id;
+    private Integer id;
     private String name;
     private Boolean isDirectory;
     private String username;

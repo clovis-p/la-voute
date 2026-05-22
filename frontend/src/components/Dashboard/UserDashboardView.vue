@@ -1,8 +1,12 @@
 <script setup>
-import {Panel, DataTable, Column, Button, Divider, FileUpload, Menu} from "primevue";
+import {Panel, DataTable, Column, Button, Divider, FileUpload, Menu, ConfirmDialog} from "primevue";
+import {useConfirm} from "primevue/useconfirm";
 import axios from 'axios';
 import {computed, onMounted, ref} from "vue";
 import CreateDirectoryModal from "@/components/Dashboard/CreateDirectoryModal.vue";
+import RenameFileModal from "@/components/Dashboard/RenameFileModal.vue";
+
+const confirm = useConfirm();
 
 const typeIcons = {
   Folder: 'pi-folder',
@@ -18,6 +22,9 @@ const typeIcons = {
 const files = ref([]);
 const activeDirId = ref(null);
 const createDirModalActive = ref(false);
+const renameModalActive = ref(false);
+const fileToRename = ref(null);
+const fileToMove = ref(null);
 
 function formatFileSize(bytes) {
   if (bytes < 1024) return bytes + ' o';
@@ -85,20 +92,41 @@ const fileMenuItems = computed(() => {
     });
   }
   items.push(
-    {
-      icon: 'pi pi-arrows-h',
-      label: 'Déplacer',
-      command: () => {
-        console.log(activeFile.value);
-      }
-    },
-    {
-      icon: 'pi pi-pencil',
-      label: 'Renommer',
-      command: () => {
-        console.log(activeFile.value);
-      }
-    },
+      {
+        icon: 'pi pi-arrows-h',
+        label: 'Déplacer',
+        command: () => {
+          fileToMove.value = activeFile.value;
+        }
+      },
+      {
+        icon: 'pi pi-pencil',
+        label: 'Renommer',
+        command: () => {
+          fileToRename.value = activeFile.value;
+          renameModalActive.value = true;
+        }
+      },
+      {
+        icon: 'pi pi-trash',
+        label: 'Supprimer',
+        command: () => {
+          confirm.require({
+            message: `Voulez-vous vraiment supprimer « ${activeFile.value.name} » ?`,
+            header: 'Confirmation',
+            icon: 'pi pi-exclamation-triangle',
+            acceptLabel: 'Supprimer',
+            rejectLabel: 'Annuler',
+            rejectProps: {
+              severity: 'secondary',
+            },
+            accept: async () => {
+              await axios.delete(`/api/files/${activeFile.value.id}/delete`);
+              obtainFiles();
+            },
+          });
+        }
+      },
   );
   return items;
 });
@@ -128,6 +156,15 @@ async function uploadFile(event) {
   obtainFiles();
 }
 
+async function moveFileHere() {
+  await axios.patch(`/api/files/${fileToMove.value.id}`, {
+    newName: fileToMove.value.name.replace(/\/$/, ''),
+    newParentId: activeDirId.value,
+  });
+  fileToMove.value = null;
+  obtainFiles();
+}
+
 function handleTableRowClick(item) {
   if (item.data.type === "Folder") {
     activeDirId.value = item.data.id;
@@ -138,11 +175,15 @@ function handleTableRowClick(item) {
 
 <template>
   <CreateDirectoryModal :visible="createDirModalActive" :active-dir-id="activeDirId" @refresh-file-list="obtainFiles" @close="createDirModalActive = false" />
+  <RenameFileModal :visible="renameModalActive" :file="fileToRename" :active-dir-id="activeDirId" @refresh-file-list="obtainFiles" @close="renameModalActive = false" />
+  <ConfirmDialog />
   <div class="px-2 pt-0 pb-2 flex-1" >
     <Panel class="mb-2 h-full" :pt="{ header: { class: 'hidden!' }, content: { class: 'p-3!' } }" >
       <div class="flex gap-2">
-        <FileUpload mode="basic" :auto="true" :multiple="true" choose-icon="pi pi-cloud-upload" choose-label="Téléverser" custom-upload @uploader="uploadFile"/>
-        <Button label="Nouveau dossier" icon="pi pi-folder-plus" severity="secondary" @click="createDirModalActive = true" />
+        <FileUpload v-if="!fileToMove" mode="basic" :auto="true" :multiple="true" choose-icon="pi pi-cloud-upload" choose-label="Téléverser" custom-upload @uploader="uploadFile"/>
+        <Button v-if="!fileToMove" label="Nouveau dossier" icon="pi pi-folder-plus" severity="secondary" @click="createDirModalActive = true" />
+        <Button v-if="fileToMove" :label="`Déplacer « ${fileToMove.name} » ici`" icon="pi pi-arrow-right" @click="moveFileHere" />
+        <Button v-if="fileToMove" label="Annuler" severity="secondary" @click="fileToMove = null" />
       </div>
       <Divider class="mt-3! mb-0! z-1!" />
       <DataTable :value="files" row-hover @row-click="handleTableRowClick">
