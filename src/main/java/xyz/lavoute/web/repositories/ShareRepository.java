@@ -9,4 +9,5 @@ import java.util.List;
 public interface ShareRepository extends CrudRepository<Share, Integer> {
     // The field is named fileId but the type is File
     List<Share> findSharesByFileId(File file);
+    void deleteAllByFileId(File file);
 }

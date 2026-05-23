@@ -2,6 +2,7 @@ package xyz.lavoute.web.services;
 
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import xyz.lavoute.web.models.File;
 import xyz.lavoute.web.models.Permission;
 import xyz.lavoute.web.models.Share;
@@ -21,5 +22,10 @@ public class ShareService {
 
     public List<Share> findSharesByFile(File file) {
         return shareRepository.findSharesByFileId(file);
+    }
+
+    @Transactional
+    public void deleteSharesByFile(File file) {
+        shareRepository.deleteAllByFileId(file);
     }
 }
