@@ -12,6 +12,7 @@ import xyz.lavoute.web.dto.FileGetDTO;
 import xyz.lavoute.web.dto.PatchRequest;
 import xyz.lavoute.web.exceptions.Error;
 import xyz.lavoute.web.exceptions.StorageException;
+import xyz.lavoute.web.exceptions.UserNotFoundException;
 import xyz.lavoute.web.services.FileService;
 
 import java.nio.charset.StandardCharsets;
@@ -113,6 +114,13 @@ public class FileController {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ResponseBody
     Error handleStorageException(StorageException exception) {
+        return new Error(exception.getMessage());
+    }
+
+    @ExceptionHandler(UserNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ResponseBody
+    Error handleUserNotFoundException(UserNotFoundException exception) {
         return new Error(exception.getMessage());
     }
 }

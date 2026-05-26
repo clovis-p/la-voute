@@ -8,8 +8,13 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import xyz.lavoute.web.dto.RegistrationRequestDTO;
+import xyz.lavoute.web.dto.UpdateProfileRequestDTO;
+import xyz.lavoute.web.dto.UserResponseDTO;
 import xyz.lavoute.web.exceptions.Error;
+import xyz.lavoute.web.exceptions.ModificationNotAllowedException;
 import xyz.lavoute.web.exceptions.UserInvalidInformationsException;
+import xyz.lavoute.web.exceptions.UserNotFoundException;
+import xyz.lavoute.web.repositories.UserRepository;
 import xyz.lavoute.web.services.UserService;
 
 import java.util.Map;
@@ -20,9 +25,11 @@ import java.util.Map;
 public class UserController {
 
     private final UserService userService;
+    private final UserRepository userRepository;
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService, UserRepository userRepository) {
     this.userService = userService;
+        this.userRepository = userRepository;
     }
 
     /**
@@ -46,10 +53,43 @@ public class UserController {
         return Map.of("username", username);
     }
 
+    @GetMapping("/{id}/profile")
+    public ResponseEntity<UserResponseDTO> getUserProfile(@PathVariable Integer id) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String username = auth.getName();
+
+        UserResponseDTO response = userService.getUserProfileInformation(username, id);
+        return ResponseEntity.status(HttpStatus.FOUND).body(response);
+    }
+
+
+    @PutMapping("/{id}/edit")
+    public ResponseEntity<UserResponseDTO> updateProfile(@PathVariable Integer id, @RequestBody UpdateProfileRequestDTO updateProfileRequestDTO) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String username = auth.getName();
+
+        UserResponseDTO response = userService.updateProfile(username, id, updateProfileRequestDTO);
+        return ResponseEntity.ok(response);
+    }
+
     @ExceptionHandler(UserInvalidInformationsException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ResponseBody
     Error handleInvalidInformations(UserInvalidInformationsException exception) {
+        return new Error(exception.getMessage());
+    }
+
+    @ExceptionHandler(ModificationNotAllowedException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    @ResponseBody
+    Error handleModificationNotAllowedException(ModificationNotAllowedException exception) {
+        return new Error(exception.getMessage());
+    }
+
+    @ExceptionHandler(UserNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ResponseBody
+    Error handleUserNotFoundException(UserNotFoundException exception) {
         return new Error(exception.getMessage());
     }
 }

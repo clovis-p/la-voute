@@ -10,6 +10,7 @@ import xyz.lavoute.web.dto.FileDownloadDTO;
 import xyz.lavoute.web.dto.FileGetDTO;
 import xyz.lavoute.web.dto.PatchRequest;
 import xyz.lavoute.web.exceptions.StorageException;
+import xyz.lavoute.web.exceptions.UserNotFoundException;
 import xyz.lavoute.web.models.File;
 import xyz.lavoute.web.models.User;
 import xyz.lavoute.web.repositories.FileRepository;
@@ -345,7 +346,7 @@ public class FileService {
     private User getUserEntity(String username) {
         Optional<User> user = userRepository.findUserByUsername(username);
         if (user.isEmpty()) {
-            throw new StorageException("L'utilisateur n'existe pas.");
+            throw new UserNotFoundException("L'utilisateur n'existe pas.");
         }
         return user.get();
     }
