@@ -207,47 +207,65 @@ function handleTableRowClick(item) {
   <RenameFileModal :visible="renameModalActive" :file="fileToRename" :active-dir-id="activeDirId" @refresh-file-list="obtainFiles" @close="renameModalActive = false" />
   <ShareFileModal :visible="shareModalActive" :file="fileToShare" @close="shareModalActive = false" />
   <DeleteFileModal :visible="deleteModalActive" :file="fileToDelete" @refresh-file-list="obtainFiles" @close="deleteModalActive = false" />
-  <ConfirmDialog />
-  <div class="px-2 pt-0 pb-2 flex-1" >
-    <Panel class="mb-2 h-full" :pt="{ header: { class: 'hidden!' }, content: { class: 'p-3!' } }" >
-      <div class="flex gap-2">
-        <FileUpload v-if="!fileToMove" mode="basic" :auto="true" :multiple="true" choose-icon="pi pi-cloud-upload" choose-label="Téléverser" custom-upload @uploader="uploadFile"/>
-        <Button v-if="!fileToMove" label="Nouveau dossier" icon="pi pi-folder-plus" severity="secondary" @click="createDirModalActive = true" />
-        <Button v-if="fileToMove" :label="`Déplacer « ${fileToMove.name} » ici`" icon="pi pi-arrow-right" @click="moveFileHere" />
-        <Button v-if="fileToMove" label="Annuler" severity="secondary" @click="fileToMove = null" />
-        <div v-if="uploadProgress != null" class="w-full md:w-80 mt-1.25 md:my-auto md:mx-2">
-          <ProgressBar :value="uploadProgress" />
-        </div>
-      </div>
-      <Divider class="mt-3! mb-0! z-1!" />
-      <DataTable :value="files" row-hover @row-click="handleTableRowClick">
-        <Column header="" style="width: 2.5rem">
-          <template #body="{ data }">
-            <i class="pi" :class="typeIcons[data.type]" />
-          </template>
-        </Column>
-        <Column field="name" header="Nom" :sortable="true" />
-        <Column field="type" sort-field="typeSortKey" header="Type" :sortable="true" />
-        <Column field="size" sort-field="sizeBytes" header="Taille" :sortable="true" />
-        <Column field="modifiedAt" header="Modifié le" :sortable="true" />
-        <Column header="" style="width: 2.5rem">
-          <template #body="{ data }">
-            <Button
-                v-if="!(data.type === 'Folder' && data.name === '../')"
-                type="button"
-                outlined
-                severity="secondary"
-                size="small"
-                icon="pi pi-ellipsis-h"
-                @click="toggleFileMenu($event, data)"
-                aria-haspopup="true"
-                aria-controls="overlay_menu"
-            />
-          </template>
-        </Column>
-      </DataTable>
-      <Menu ref="menu" id="overlay_menu" :model="fileMenuItems" :popup="true" />
-    </Panel>
+  <div class="flex flex-col flex-1 min-h-0">
+  <div class="flex gap-2 flex-wrap">
+    <FileUpload v-if="!fileToMove" mode="basic" :auto="true" :multiple="true" choose-icon="pi pi-cloud-upload" choose-label="Téléverser" custom-upload @uploader="uploadFile"/>
+    <Button v-if="!fileToMove" label="Nouveau dossier" icon="pi pi-folder-plus" severity="secondary" @click="createDirModalActive = true" />
+    <div v-if="uploadProgress != null" class="w-full md:w-80 mt-1.25 md:my-auto md:mx-2">
+      <ProgressBar :value="uploadProgress" />
+    </div>
+    <Button v-if="fileToMove" :label="`Déplacer ${fileToMove.name} ici`" icon="pi pi-arrow-right" :loading="movingFile" @click="moveFileHere" />
+    <Button v-if="fileToMove" label="Annuler" severity="secondary" @click="fileToMove = null" />
+  </div>
+    <Divider class="mt-3! mb-0! z-2!" />
+    <DataTable
+        class="flex-1 min-h-0"
+        scrollable
+        scroll-height="flex"
+        :value="files"
+        row-hover
+        @row-click="handleTableRowClick"
+        :pt="{
+          thead: {
+            class: 'hidden md:table-header-group'
+          },
+          tableContainer: {
+            class: 'overflow-x-hidden!'
+          },
+          table: {
+            style: 'table-layout: fixed; width: 100%'
+          },
+          bodyRow: {
+            class: 'h-15.25'
+          }
+        }"
+    >
+      <Column header="" style="width: 2.5rem">
+        <template #body="{ data }">
+          <i class="pi" :class="typeIcons[data.type]" />
+        </template>
+      </Column>
+      <Column  field="name" header="Nom" :sortable="true" :pt="{ bodyCell: { class: 'truncate!' } }" />
+      <Column field="type" sort-field="typeSortKey" header="Type" :sortable="true" :pt="{ headerCell: { class: 'hidden! md:table-cell!' }, bodyCell: { class: 'hidden! md:table-cell!' } }" />
+      <Column field="size" sort-field="sizeBytes" header="Taille" :sortable="true" :pt="{ headerCell: { class: 'hidden! md:table-cell!' }, bodyCell: { class: 'hidden! md:table-cell!' } }" />
+      <Column field="modifiedAt" header="Modifié le" :sortable="true" :pt="{ headerCell: { class: 'hidden! md:table-cell!' }, bodyCell: { class: 'hidden! md:table-cell!' } }" />
+      <Column header="" class="w-16">
+        <template #body="{ data }">
+          <Button
+              v-if="!(data.type === 'Folder' && data.name === '../')"
+              type="button"
+              outlined
+              severity="secondary"
+              size="small"
+              icon="pi pi-ellipsis-h"
+              @click="toggleFileMenu($event, data)"
+              aria-haspopup="true"
+              aria-controls="overlay_menu"
+          />
+        </template>
+      </Column>
+    </DataTable>
+    <Menu ref="menu" id="overlay_menu" :model="fileMenuItems" :popup="true" />
   </div>
 </template>
 
