@@ -4,18 +4,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.PathVariable;
-import xyz.lavoute.web.dto.RegistrationRequestDTO;
-import xyz.lavoute.web.dto.UpdateProfileRequestDTO;
-import xyz.lavoute.web.dto.UserDTOMapper;
-import xyz.lavoute.web.dto.UserResponseDTO;
+import org.springframework.web.multipart.MultipartFile;
+import xyz.lavoute.web.dto.*;
 import xyz.lavoute.web.exceptions.ModificationNotAllowedException;
+import xyz.lavoute.web.exceptions.ProfilePictureErrorException;
 import xyz.lavoute.web.exceptions.UserInvalidInformationsException;
 import xyz.lavoute.web.exceptions.UserNotFoundException;
 import xyz.lavoute.web.models.User;
 import xyz.lavoute.web.repositories.UserRepository;
 import xyz.lavoute.web.validation.UserValidator;
 
+import java.io.IOException;
+import java.util.Base64;
 import java.util.Optional;
 
 @Service
@@ -59,8 +59,17 @@ public class UserService {
             logger.error(errorMessage + registrationRequestDTO.getUsername());
             throw new UserInvalidInformationsException(errorMessage);
         }
+
         registrationRequestDTO.setPassword(encoder.encode(registrationRequestDTO.getPassword()));
-        User user = userDTOMapper.toUser(registrationRequestDTO);
+        String encodedPicture;
+        try {
+            byte[] bytes = getClass().getResourceAsStream("/images/default-avatar.jpg").readAllBytes();
+            encodedPicture = Base64.getEncoder().encodeToString(bytes);
+        } catch (IOException e) {
+            throw new ProfilePictureErrorException("Erreur lors de la création de la création du profil");
+        }
+
+        User user = userDTOMapper.toUser(registrationRequestDTO, encodedPicture);
         User savedUser = userRepository.save(user);
         int id = savedUser.getId();
 
@@ -69,11 +78,9 @@ public class UserService {
         return savedUser;
     }
 
-    public UserResponseDTO updateProfile(String username, Integer id, UpdateProfileRequestDTO updateProfileRequestDTO) {
+    public UserResponseDTO updateProfile(String username, UpdateProfileRequestDTO updateProfileRequestDTO) {
         logger.info("The user : " + username + " is modifying their profile.");
-
-        User userEntity = getUserEntity(id);
-        checkOwnership(username, userEntity);
+        User userEntity = getUserEntity(username);
 
         String errorMessage = userValidator.validateProfileUpdate(updateProfileRequestDTO, userEntity.getPassword());
         if (!errorMessage.isEmpty()) {
@@ -94,29 +101,32 @@ public class UserService {
         return new UserResponseDTO(userEntity.getUsername(), userEntity.getFirstName(), userEntity.getLastName(), userEntity.getProfilePic());
     }
 
-    public UserResponseDTO getUserProfileInformation(String username, Integer id) {
-        logger.info("The user : " + username + " is consulting their profile.");
-
-        User userEntity = getUserEntity(id);
-        checkOwnership(username, userEntity);
-
+    public UserResponseDTO getUserProfileInformation(String username) {
+        User userEntity = getUserEntity(username);
         return new UserResponseDTO(userEntity.getUsername(), userEntity.getFirstName(), userEntity.getLastName(), userEntity.getProfilePic());
     }
 
-    private void checkOwnership(String username, User user) {
-        if (!user.getUsername().equals(username)) {
-            logger.warn(username + " tried to modify someone else's profile with the username : " + user.getUsername());
-            throw new ModificationNotAllowedException("Vous ne pouvez pas modifer ce profil");
+    public UpdatedProfilePicDTO saveNewProfilePicture(String username, MultipartFile picture) {
+        User userEntity = getUserEntity(username);
+
+        try {
+            byte[] bytes = picture.getBytes();
+            userEntity.setProfilePic(Base64.getEncoder().encodeToString(bytes));
+
+        } catch (IOException e) {
+            throw new ProfilePictureErrorException("Le photo de profil n'a pas pu être enregistrée.");
         }
+        userRepository.save(userEntity);
+        return new UpdatedProfilePicDTO(userEntity.getProfilePic());
     }
 
     /**
      * Getting the correct user authenticated with their username
-     * @param id the id of the user authenticated
+     * @param username the username of the user currently authenticated
      * @return the user entity
      */
-    private User getUserEntity(Integer id) {
-        Optional<User> user = userRepository.findUserById(id);
+    private User getUserEntity(String username) {
+        Optional<User> user = userRepository.findUserByUsername(username);
         if (user.isEmpty()) {
             throw new UserNotFoundException("L'utilisateur n'existe pas.");
         }

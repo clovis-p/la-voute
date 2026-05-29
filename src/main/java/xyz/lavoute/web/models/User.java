@@ -22,13 +22,13 @@ public class User {
     private String profilePic;
     private boolean isBanned;
 
-    public User(String username, String firstName, String lastName, String password) {
+    public User(String username, String firstName, String lastName, String password, String profilePic) {
         this.username = username;
         this.firstName = firstName;
         this.lastName = lastName;
         this.password = password;
         this.isAdmin = false;
-        this.profilePic = "ressources/images/user.png";
+        this.profilePic = profilePic;
         this.isBanned = false;
     }
 }

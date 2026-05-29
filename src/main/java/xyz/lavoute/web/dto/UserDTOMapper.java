@@ -9,7 +9,7 @@ public class UserDTOMapper {
         return new RegistrationRequestDTO(user);
     }
 
-    public User toUser(RegistrationRequestDTO registrationRequestDTO) {
-        return new User(registrationRequestDTO.getUsername(), registrationRequestDTO.getFirstName(), registrationRequestDTO.getLastName(), registrationRequestDTO.getPassword());
+    public User toUser(RegistrationRequestDTO registrationRequestDTO, String profilePicture) {
+        return new User(registrationRequestDTO.getUsername(), registrationRequestDTO.getFirstName(), registrationRequestDTO.getLastName(), registrationRequestDTO.getPassword(), profilePicture);
     }
 }

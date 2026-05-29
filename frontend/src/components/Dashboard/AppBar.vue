@@ -2,7 +2,6 @@
 import Button from "primevue/button";
 import {Avatar, Toolbar, SplitButton} from "primevue";
 import AppLogo from '@/assets/AppLogo.vue';
-import DefaultAvatar from '@/assets/test-images/default-pp.jpg';
 import { useRouter } from 'vue-router';
 import axios from "axios";
 import {onMounted, ref} from "vue";
@@ -10,10 +9,12 @@ import {onMounted, ref} from "vue";
 const router = useRouter();
 
 const username = ref('');
+const profilePic = ref('');
 
 onMounted(async () => {
   const res = await axios.get("/api/user/me");
   username.value = res.data.username;
+  profilePic.value = `data:image/jpeg;base64,${res.data.profilePicture}`;
 });
 
 const userMenuItems = [
@@ -45,7 +46,7 @@ const userMenuItems = [
       <div class="flex items-center gap-2">
         <SplitButton class="user-btn" :model="userMenuItems">
           <span class="flex items-center font-bold">
-            <Avatar :image="DefaultAvatar"/>
+            <Avatar :image="profilePic"/>
             <span class="mx-2">{{username}}</span>
           </span>
         </SplitButton>

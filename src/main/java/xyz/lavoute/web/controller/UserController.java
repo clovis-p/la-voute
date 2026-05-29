@@ -5,14 +5,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import xyz.lavoute.web.dto.RegistrationRequestDTO;
 import xyz.lavoute.web.dto.UpdateProfileRequestDTO;
+import xyz.lavoute.web.dto.UpdatedProfilePicDTO;
 import xyz.lavoute.web.dto.UserResponseDTO;
+import xyz.lavoute.web.exceptions.*;
 import xyz.lavoute.web.exceptions.Error;
-import xyz.lavoute.web.exceptions.ModificationNotAllowedException;
-import xyz.lavoute.web.exceptions.UserInvalidInformationsException;
-import xyz.lavoute.web.exceptions.UserNotFoundException;
-import xyz.lavoute.web.repositories.UserRepository;
 import xyz.lavoute.web.services.UserService;
 
 import java.util.Map;
@@ -33,7 +32,7 @@ public class UserController {
      *
      * @param registrationRequestDto the user to save
      * @return the HTTPStatus "Created" (201) if the information were valid
-     * @throws UserInvalidInformationsException with the error message when some informations are not valid
+     * @throws UserInvalidInformationsException with the error message when some information are not valid
      */
     @PostMapping("/register")
     public ResponseEntity<Integer> registerNewUser(@RequestBody RegistrationRequestDTO registrationRequestDto) {
@@ -42,33 +41,31 @@ public class UserController {
     }
 
     @GetMapping("/me")
-    public Map<String, String> getSessionUserInfo() {
+    public ResponseEntity<UserResponseDTO> getSessionUserInfo() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String username = auth.getName();
 
-        return Map.of("username", username);
+        UserResponseDTO response = userService.getUserProfileInformation(username);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
-    @GetMapping("/{id}/profile")
-    public ResponseEntity<UserResponseDTO> getUserProfile(@PathVariable Integer id) {
+    @PutMapping("/edit")
+    public ResponseEntity<UserResponseDTO> updateProfile(@RequestBody UpdateProfileRequestDTO updateProfileRequestDTO) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String username = auth.getName();
 
-        UserResponseDTO response = userService.getUserProfileInformation(username, id);
-        return ResponseEntity.status(HttpStatus.FOUND).body(response);
-    }
-
-
-    @PutMapping("/{id}/edit")
-    public ResponseEntity<UserResponseDTO> updateProfile(@PathVariable Integer id, @RequestBody UpdateProfileRequestDTO updateProfileRequestDTO) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        String username = auth.getName();
-
-        UserResponseDTO response = userService.updateProfile(username, id, updateProfileRequestDTO);
+        UserResponseDTO response = userService.updateProfile(username, updateProfileRequestDTO);
         return ResponseEntity.ok(response);
     }
 
-    @PatchMapping
+    @PatchMapping("/update-picture")
+    public ResponseEntity<UpdatedProfilePicDTO> uploadProfilePicture(@RequestParam("picture") MultipartFile picture) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String username = auth.getName();
+
+        UpdatedProfilePicDTO returnDTO = userService.saveNewProfilePicture(username, picture);
+        return ResponseEntity.ok(returnDTO);
+    }
 
     @ExceptionHandler(UserInvalidInformationsException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
@@ -88,6 +85,13 @@ public class UserController {
     @ResponseStatus(HttpStatus.NOT_FOUND)
     @ResponseBody
     Error handleUserNotFoundException(UserNotFoundException exception) {
+        return new Error(exception.getMessage());
+    }
+
+    @ExceptionHandler(ProfilePictureErrorException.class)
+    @ResponseStatus(HttpStatus.NOT_MODIFIED)
+    @ResponseBody
+    Error handleProfilePictureErrorException(ProfilePictureErrorException exception) {
         return new Error(exception.getMessage());
     }
 }
