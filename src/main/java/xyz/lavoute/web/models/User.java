@@ -19,6 +19,7 @@ public class User {
     private String lastName;
     private String password;
     private Boolean isAdmin;
+    @Column(columnDefinition = "LONGTEXT")
     private String profilePic;
     private boolean isBanned;
 

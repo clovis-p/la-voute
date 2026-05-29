@@ -114,6 +114,12 @@ public class UserValidator {
         return message;
     }
 
+    /**
+     * Verify if the old password entered is correct
+     * @param passwordToVerify the password entered in the form to verify
+     * @param oldPassword the password encoded in the database
+     * @return true if it's fine, false if not
+     */
     private boolean verifyOldPassword(String passwordToVerify, String oldPassword) {
         return encoder.matches(passwordToVerify, oldPassword);
     }

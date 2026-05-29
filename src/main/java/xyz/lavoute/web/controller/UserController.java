@@ -14,8 +14,6 @@ import xyz.lavoute.web.exceptions.*;
 import xyz.lavoute.web.exceptions.Error;
 import xyz.lavoute.web.services.UserService;
 
-import java.util.Map;
-
 @RestController
 @CrossOrigin
 @RequestMapping("/api/user")
@@ -40,6 +38,10 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
+    /**
+     * Called whenever the frontend need information from the user (username, first and last name, profile picture)
+     * @return a dto containing the user information
+     */
     @GetMapping("/me")
     public ResponseEntity<UserResponseDTO> getSessionUserInfo() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -49,6 +51,11 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
+    /**
+     * Called when the user is editing their profile
+     * @param updateProfileRequestDTO a dto containing the needed information to edit or to verify (old password, first and last name, new password)
+     * @return a dto containing the new information
+     */
     @PutMapping("/edit")
     public ResponseEntity<UserResponseDTO> updateProfile(@RequestBody UpdateProfileRequestDTO updateProfileRequestDTO) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -58,6 +65,11 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
+    /**
+     * Called when the user is trying to change their profile picture
+     * @param picture the new picture
+     * @return a dto containing only the encoded profile picture for live change on the frontend
+     */
     @PatchMapping("/update-picture")
     public ResponseEntity<UpdatedProfilePicDTO> uploadProfilePicture(@RequestParam("picture") MultipartFile picture) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -67,6 +79,9 @@ public class UserController {
         return ResponseEntity.ok(returnDTO);
     }
 
+    /**
+     * All the exceptions handling
+     */
     @ExceptionHandler(UserInvalidInformationsException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ResponseBody

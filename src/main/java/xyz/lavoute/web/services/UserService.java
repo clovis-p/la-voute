@@ -46,9 +46,9 @@ public class UserService {
     }
 
     /**
-     * Registering a new user in the database if the informations are valid
+     * Registering a new user in the database if the information are valid
      * @param registrationRequestDTO the user model to validate and put in the database
-     * @throws UserInvalidInformationsException when some informations are invalid
+     * @throws UserInvalidInformationsException when some information are invalid
      */
     public User registerUser(RegistrationRequestDTO registrationRequestDTO) {
         logger.info("Registering new user : " + registrationRequestDTO.getFirstName() + " " + registrationRequestDTO.getLastName());
@@ -61,6 +61,8 @@ public class UserService {
         }
 
         registrationRequestDTO.setPassword(encoder.encode(registrationRequestDTO.getPassword()));
+
+        //Encoding in Base64 the default profile picture
         String encodedPicture;
         try {
             byte[] bytes = getClass().getResourceAsStream("/images/default-avatar.jpg").readAllBytes();
@@ -78,15 +80,23 @@ public class UserService {
         return savedUser;
     }
 
+    /**
+     * Called when user modify information on their profile (first name, last name, or password)
+     * @param username the username of the user currently authenticated
+     * @param updateProfileRequestDTO the dto containing all the infos to update
+     * @return a DTO containing all the information of the user
+     */
     public UserResponseDTO updateProfile(String username, UpdateProfileRequestDTO updateProfileRequestDTO) {
         logger.info("The user : " + username + " is modifying their profile.");
         User userEntity = getUserEntity(username);
 
+        //Validating the information
         String errorMessage = userValidator.validateProfileUpdate(updateProfileRequestDTO, userEntity.getPassword());
         if (!errorMessage.isEmpty()) {
             throw new UserInvalidInformationsException(errorMessage);
         }
 
+        //Modifying stuff only when it's valid and if there's something in it
         if (updateProfileRequestDTO.getFirstName() != null && !updateProfileRequestDTO.getFirstName().isEmpty()) {
             userEntity.setFirstName(updateProfileRequestDTO.getFirstName());
         }
@@ -101,14 +111,26 @@ public class UserService {
         return new UserResponseDTO(userEntity.getUsername(), userEntity.getFirstName(), userEntity.getLastName(), userEntity.getProfilePic());
     }
 
+    /**
+     * Obtain all the authenticated user information -> could maybe be used for an admin once that is created (to see users profiles)
+     * @param username the username of the profile we want to see / the person currently authenticated
+     * @return a dto containing all the necessary information
+     */
     public UserResponseDTO getUserProfileInformation(String username) {
         User userEntity = getUserEntity(username);
         return new UserResponseDTO(userEntity.getUsername(), userEntity.getFirstName(), userEntity.getLastName(), userEntity.getProfilePic());
     }
 
+    /**
+     * Called when the user is uploading a new profile picture
+     * @param username the username of the user currently authenticated
+     * @param picture the picture being uploaded
+     * @return a dto containing the encoded profile picture to update the frontend
+     */
     public UpdatedProfilePicDTO saveNewProfilePicture(String username, MultipartFile picture) {
         User userEntity = getUserEntity(username);
 
+        //Encoding the uploaded picture
         try {
             byte[] bytes = picture.getBytes();
             userEntity.setProfilePic(Base64.getEncoder().encodeToString(bytes));

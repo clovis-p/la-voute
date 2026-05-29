@@ -92,7 +92,7 @@ public class UserValidatorTest {
 
     @Test
     void shouldReturnAdaptedError_whenUsernameIsAlreadyTaken() {
-        when(userRepository.findUserByUsername("username")).thenReturn(Optional.of(new User("username", "Test", "Test", "Password123!")));
+        when(userRepository.findUserByUsername("username")).thenReturn(Optional.of(new User("username", "Test", "Test", "Password123!", "null")));
         String result = userValidator.validateRegistration(user);
         assertEquals("Un utilisateur existe déjà avec ce username. \n", result);
 

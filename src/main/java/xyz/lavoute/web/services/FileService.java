@@ -106,7 +106,7 @@ public class FileService {
         File parentFile = getParentDirectory(parentDirId, userFound);
         File dirEntity = new File(storageRoot.toString(), name, true, true, userFound, parentFile);
         //Saving a first time to get the id
-        fileRepository.save(dirEntity);
+        dirEntity = fileRepository.save(dirEntity);
 
         //Obtaining the hashed name from the id
         String hashedFileName = obtainHashedFileName(dirEntity.getId());
