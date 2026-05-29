@@ -1,5 +1,6 @@
 package xyz.lavoute.web.validation;
 
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 import xyz.lavoute.web.dto.RegistrationRequestDTO;
 import xyz.lavoute.web.dto.UpdateProfileRequestDTO;
@@ -13,9 +14,12 @@ import java.util.Optional;
 public class UserValidator {
 
     private final UserRepository password;
+    private final BCryptPasswordEncoder encoder;
+
 
     public UserValidator(UserRepository userRepository) {
         this.password = userRepository;
+        this.encoder = new BCryptPasswordEncoder();
     }
 
     /**
@@ -38,18 +42,23 @@ public class UserValidator {
 
     /**
      * Validation when a user is modifying their profile
-     * @param user the userDTO with the modified informations
+     * @param user the userDTO with the modified information
      * @return an appropriate error message
      */
-    public String validateProfileUpdate(UpdateProfileRequestDTO user) {
-        if (user.getFirstName() == null || user.getLastName() == null || user.getPassword() == null) {
-            throw new UserInvalidInformationsException("Certains champs sont null.");
-        }
-
+    public String validateProfileUpdate(UpdateProfileRequestDTO user, String oldPassword) {
         String returnMessage = "";
-        returnMessage += validateFirstName(user.getFirstName());
-        returnMessage += validateLastName(user.getLastName());
-        returnMessage += validateUsername(user.getPassword());
+        if (user.getFirstName() != null && !user.getFirstName().isEmpty()) {
+            returnMessage += validateFirstName(user.getFirstName());
+        }
+        if (user.getLastName() != null && !user.getLastName().isEmpty()) {
+            returnMessage += validateLastName(user.getLastName());
+        }
+        if (user.getPassword() != null && !user.getPassword().isEmpty()) {
+            returnMessage += validatePassword(user.getPassword());
+            if (!verifyOldPassword(user.getOldPassword(), oldPassword)) {
+                returnMessage += "L'ancien mot de passe entré est mauvais.";
+            }
+        }
         return returnMessage;
     }
 
@@ -103,5 +112,9 @@ public class UserValidator {
             message += "Le mot de passe doit avoir au moins un symbole. \n";
         }
         return message;
+    }
+
+    private boolean verifyOldPassword(String passwordToVerify, String oldPassword) {
+        return encoder.matches(passwordToVerify, oldPassword);
     }
 }

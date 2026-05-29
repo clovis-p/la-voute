@@ -1,7 +1,5 @@
 package xyz.lavoute.web.controller;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -25,11 +23,9 @@ import java.util.Map;
 public class UserController {
 
     private final UserService userService;
-    private final UserRepository userRepository;
 
-    public UserController(UserService userService, UserRepository userRepository) {
-    this.userService = userService;
-        this.userRepository = userRepository;
+    public UserController(UserService userService) {
+        this.userService = userService;
     }
 
     /**
@@ -71,6 +67,8 @@ public class UserController {
         UserResponseDTO response = userService.updateProfile(username, id, updateProfileRequestDTO);
         return ResponseEntity.ok(response);
     }
+
+    @PatchMapping
 
     @ExceptionHandler(UserInvalidInformationsException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)

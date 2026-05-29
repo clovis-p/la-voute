@@ -75,15 +75,20 @@ public class UserService {
         User userEntity = getUserEntity(id);
         checkOwnership(username, userEntity);
 
-        String errorMessage = userValidator.validateProfileUpdate(updateProfileRequestDTO);
+        String errorMessage = userValidator.validateProfileUpdate(updateProfileRequestDTO, userEntity.getPassword());
         if (!errorMessage.isEmpty()) {
             throw new UserInvalidInformationsException(errorMessage);
         }
 
-        userEntity.setFirstName(updateProfileRequestDTO.getFirstName());
-        userEntity.setLastName(updateProfileRequestDTO.getLastName());
-        userEntity.setUsername(username);
-        userEntity.setPassword(encoder.encode(updateProfileRequestDTO.getPassword()));
+        if (updateProfileRequestDTO.getFirstName() != null && !updateProfileRequestDTO.getFirstName().isEmpty()) {
+            userEntity.setFirstName(updateProfileRequestDTO.getFirstName());
+        }
+        if (updateProfileRequestDTO.getLastName() != null && !updateProfileRequestDTO.getLastName().isEmpty()) {
+            userEntity.setLastName(updateProfileRequestDTO.getLastName());
+        }
+        if (updateProfileRequestDTO.getPassword() != null && !updateProfileRequestDTO.getPassword().isEmpty()) {
+            userEntity.setPassword(encoder.encode(updateProfileRequestDTO.getPassword()));
+        }
         userRepository.save(userEntity);
 
         return new UserResponseDTO(userEntity.getUsername(), userEntity.getFirstName(), userEntity.getLastName(), userEntity.getProfilePic());

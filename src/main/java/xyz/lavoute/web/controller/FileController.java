@@ -19,7 +19,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 
 @RestController
-@CrossOrigin
+@CrossOrigin //TODO Add specific domain for production
 @RequestMapping("/api/files")
 public class FileController {
 
