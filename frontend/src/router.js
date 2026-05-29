@@ -2,10 +2,12 @@ import { createRouter, createWebHistory } from 'vue-router';
 import axios from 'axios';
 import Login from './pages/Login.vue';
 import Home from './pages/Home.vue';
+import Download from './pages/Download.vue';
 
 const routes = [
     { path: '/', component: Login, meta: { requiresGuest: true } },
     { path: '/accueil', component: Home, meta: { requiresAuth: true } },
+    { path: '/download/:fileId', component: Download },
 ];
 
 const router = createRouter({
