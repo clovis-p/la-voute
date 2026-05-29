@@ -1,8 +1,6 @@
 package xyz.lavoute.web.services;
 
 import org.hashids.Hashids;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
@@ -20,14 +18,10 @@ import xyz.lavoute.web.repositories.UserRepository;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -35,28 +29,18 @@ import java.util.Optional;
 
 @Service
 public class FileService {
-    private static final Logger LOGGER = LoggerFactory.getLogger(FileService.class);
 
     @Value("${storage.root}")
     private String storageRoot;
     private final UserRepository userRepository;
     private final FileRepository fileRepository;
-    private final CryptoService cryptoService;
 
     @Value("${hashids.salt}")
     private String hashidsSalt;
 
-    @Value("${app.signed-url.duration-minutes}")
-    private String signedUrlValidDurationMinutes;
-
-    public FileService(
-            UserRepository userRepository,
-            FileRepository fileRepository,
-            CryptoService cryptoService
-    ) {
+    public FileService(UserRepository userRepository, FileRepository fileRepository) {
         this.userRepository = userRepository;
         this.fileRepository = fileRepository;
-        this.cryptoService = cryptoService;
     }
 
     /**
@@ -332,11 +316,6 @@ public class FileService {
             throw new StorageException("Le parent doit être un dossier.");
         }
         return parentDirectory;
-    }
-
-
-    public Optional<File> getFileById(int fileId) {
-        return fileRepository.getFileById(fileId);
     }
 
     private void validateFile(File file, User user) {

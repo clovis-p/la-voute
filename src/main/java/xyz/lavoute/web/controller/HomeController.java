@@ -1,6 +1,4 @@
 package xyz.lavoute.web.controller;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.*;
 
@@ -12,7 +10,6 @@ import java.util.Random;
 @CrossOrigin // TODO Add specific domain for production
 @RequestMapping("/api")
 public class HomeController {
-    private static final Logger LOGGER = LoggerFactory.getLogger(HomeController.class);
 
     private static final List<String> SUBTITLES = List.of(
             "Votre IRL Ender Chest",
@@ -32,7 +29,6 @@ public class HomeController {
 
     @GetMapping("/csrf")
     public void getCsrfToken(CsrfToken token) {
-        LOGGER.info("csrf token requested");
         token.getToken();
     }
 }

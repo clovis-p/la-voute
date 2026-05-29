@@ -14,8 +14,6 @@ import xyz.lavoute.web.exceptions.StorageException;
 import xyz.lavoute.web.models.File;
 import xyz.lavoute.web.models.User;
 import xyz.lavoute.web.repositories.FileRepository;
-import xyz.lavoute.web.repositories.PermissionRepository;
-import xyz.lavoute.web.repositories.ShareRepository;
 import xyz.lavoute.web.repositories.UserRepository;
 import xyz.lavoute.web.services.FileService;
 import xyz.lavoute.web.services.UserService;
@@ -41,8 +39,6 @@ public class DataSeeder implements CommandLineRunner {
 
     private FileRepository fileRepository;
     private FileService fileService;
-    private ShareRepository shareRepository;
-    private PermissionRepository permissionRepository;
 
     private final Path storageRoot = Path.of("storage");
 
@@ -52,15 +48,11 @@ public class DataSeeder implements CommandLineRunner {
             UserService userService,
             FileRepository fileRepository,
             FileService fileService,
-            ShareRepository shareRepository,
-            PermissionRepository permissionRepository,
             StandardServletMultipartResolver standardServletMultipartResolver) {
         this.userRepository = userRepository;
         this.userService = userService;
         this.fileRepository = fileRepository;
         this.fileService = fileService;
-        this.shareRepository = shareRepository;
-        this.permissionRepository = permissionRepository;
         this.standardServletMultipartResolver = standardServletMultipartResolver;
     }
 
@@ -138,8 +130,6 @@ public class DataSeeder implements CommandLineRunner {
 
         LOGGER.info("User Seeder running ...");
         LOGGER.info("Flushing User, File tables and storage directory ...");
-        shareRepository.deleteAll();
-        permissionRepository.deleteAll();
         fileRepository.deleteAll();
         userRepository.deleteAll();
         java.io.File storageDir = new java.io.File("storage/");

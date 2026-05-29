@@ -20,9 +20,4 @@ public class Share {
     @OneToOne
     @JoinColumn(name = "file_id")
     private File fileId;
-
-    public Share(Permission permission, File file) {
-        this.permsId = permission;
-        this.fileId = file;
-    }
 }
