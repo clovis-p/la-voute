@@ -34,7 +34,8 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/home",
                                 "/api/csrf",
-                                "/api/user/register"
+                                "/api/user/register",
+                                "/api/files/*"
                         )
                         .permitAll()
                         .anyRequest()

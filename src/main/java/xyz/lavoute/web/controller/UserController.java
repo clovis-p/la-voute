@@ -1,5 +1,8 @@
 package xyz.lavoute.web.controller;
 
+import lombok.extern.java.Log;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -18,6 +21,7 @@ import xyz.lavoute.web.services.UserService;
 @CrossOrigin
 @RequestMapping("/api/user")
 public class UserController {
+    private static final Logger LOGGER = LoggerFactory.getLogger(UserController.class);
 
     private final UserService userService;
 
@@ -43,21 +47,8 @@ public class UserController {
      * @return a dto containing the user information
      */
     @GetMapping("/me")
-    public ResponseEntity<UserResponseDTO> getSessionUserInfo() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        String username = auth.getName();
-
-        UserResponseDTO response = userService.getUserProfileInformation(username);
-        return ResponseEntity.status(HttpStatus.OK).body(response);
-    }
-
-    /**
-     * Called when the user is editing their profile
-     * @param updateProfileRequestDTO a dto containing the needed information to edit or to verify (old password, first and last name, new password)
-     * @return a dto containing the new information
-     */
-    @PutMapping("/edit")
-    public ResponseEntity<UserResponseDTO> updateProfile(@RequestBody UpdateProfileRequestDTO updateProfileRequestDTO) {
+    public Map<String, String> getSessionUserInfo() {
+        LOGGER.info("User requested it's identity");
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String username = auth.getName();
 
