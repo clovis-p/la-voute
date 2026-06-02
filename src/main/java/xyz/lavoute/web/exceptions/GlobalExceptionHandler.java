@@ -3,14 +3,11 @@ package xyz.lavoute.web.exceptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
-import java.io.FileNotFoundException;
-import java.nio.file.AccessDeniedException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 
@@ -52,8 +49,8 @@ public class GlobalExceptionHandler {
                 .body(customError);
     }
 
-    @ExceptionHandler(FileNotFoundException.class)
-    public ResponseEntity<Error> handleFileNotFound(FileNotFoundException ex) {
+    @ExceptionHandler(SharingAttemptOnNonExistentFileException.class)
+    public ResponseEntity<Error> handleSharingAttemptOnNonExistingFile(SharingAttemptOnNonExistentFileException ex) {
         showOriginErrorMessage(ex);
 
         LOGGER.error("Tried to share a file that doesn't exist");
@@ -61,6 +58,18 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
+                .body(customError);
+    }
+
+    @ExceptionHandler(DownloadNonExistingFileException.class)
+    public ResponseEntity<Error> handleDownloadNonExistingFile(DownloadNonExistingFileException ex) {
+        showOriginErrorMessage(ex);
+
+        LOGGER.error("Tried to download a file that doesn't exist");
+        Error customError = new Error("Tried to download a file that doesn't exist");
+
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
                 .body(customError);
     }
 
@@ -97,6 +106,28 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity
                 .status(HttpStatus.FORBIDDEN)
+                .body(customError);
+    }
+
+    @ExceptionHandler(UnauthenticatedUserOnPrivateFileException.class)
+    public ResponseEntity<Error> handleUnauthenticatedUserOnPrivateFile(UnauthenticatedUserOnPrivateFileException ex) {
+        showOriginErrorMessage(ex);
+
+        LOGGER.error("File was not public and the user was not connected");
+        Error customError = new Error("Unauthenticated access attempt on a file that is not shared publicly");
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(customError);
+    }
+
+    @ExceptionHandler(AccessOnNonExistingFileException.class)
+    public ResponseEntity<Error> handleAccessOnNonExistingFileException(AccessOnNonExistingFileException ex) {
+        showOriginErrorMessage(ex);
+
+        LOGGER.error("Tried to get information on a file that doesn't exist");
+        Error customError = new Error("Tried to get information on a file that doesn't exist");
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
                 .body(customError);
     }
 

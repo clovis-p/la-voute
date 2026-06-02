@@ -260,7 +260,7 @@ public class FileService {
   
     /*
      * Get the file resource with the hashed name (path)
-     * @param username the username of the currently connected user
+     * @param username the username of the **file owner otherwise corrupted image**
      * @param fileId the id of the file to get the resource from
      * @return a file DTO containing the resource (file content), the name and the mime type (file type)
      */

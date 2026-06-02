@@ -36,7 +36,7 @@ public class SecurityConfig {
                                 "/api/csrf",
                                 "/api/user/register",
                                 "/api/files/*",
-                                "/api/files/share/{fileId}/download"
+                                "/api/files/{fileId}/download"
                         )
                         .permitAll()
                         .anyRequest()
