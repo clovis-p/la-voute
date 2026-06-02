@@ -1,17 +1,13 @@
 package xyz.lavoute.web.controller;
 
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.*;
-import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.parameters.P;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -20,8 +16,6 @@ import xyz.lavoute.web.dto.FileGetDTO;
 import xyz.lavoute.web.dto.FileVisibilityDTO;
 import xyz.lavoute.web.dto.PatchRequest;
 import xyz.lavoute.web.exceptions.Error;
-import xyz.lavoute.web.exceptions.NoOwnershipOnSharedFileException;
-import xyz.lavoute.web.exceptions.NoPermissionOnSharedFileException;
 import xyz.lavoute.web.exceptions.StorageException;
 import xyz.lavoute.web.models.File;
 import xyz.lavoute.web.models.Permission;
@@ -32,12 +26,7 @@ import xyz.lavoute.web.services.PermissionService;
 import xyz.lavoute.web.services.ShareService;
 import xyz.lavoute.web.services.UserService;
 
-import javax.swing.text.html.Option;
 import java.io.FileNotFoundException;
-import java.net.URI;
-import java.nio.file.AccessDeniedException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import java.security.Principal;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
@@ -147,6 +136,75 @@ public class FileController {
                 )
                 .body(downloadDTO.getResource());
 
+    }
+
+    @GetMapping("share/{fileId}/download")
+    public ResponseEntity<Resource> fileSharingDownload(Principal principal, @PathVariable int fileId) throws FileNotFoundException {
+        Optional<File> maybeFile = fileService.getFileById(fileId);
+
+        if (maybeFile.isEmpty()) {
+            throw new FileNotFoundException();
+        }
+
+        Integer downloadedFileId = maybeFile.get().getId();
+
+        if (fileIsPublic(maybeFile.get())) {
+            LOGGER.info(
+                    "Downloaded file with id: " + downloadedFileId + " because file is public"
+            );
+
+            User user = maybeFile.get().getUser();
+
+            return getDownloadedFile(
+                    user.getUsername(),
+                    downloadedFileId
+            );
+        } else {
+            if (principal == null) {
+                LOGGER.error("File was not public and the user was not connected");
+            }
+
+            String username = principal.getName();
+            Optional<User> maybeUser = userService.getUserByUsername(username);
+
+            if (maybeUser.isEmpty()) {
+                throw new UsernameNotFoundException(username);
+            }
+
+            if (userHasPermissionOnFile(maybeUser.get(), maybeFile.get())) {
+                LOGGER.info(
+                        "User with name: " + username + " downloaded file with id: " + downloadedFileId + " because user has permissions on file"
+                );
+
+                return getDownloadedFile(
+                        username,
+                        downloadedFileId
+                );
+            }
+        }
+
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .build();
+    }
+
+    private ResponseEntity<Resource> getDownloadedFile(String username, Integer fileId) {
+        FileDownloadDTO downloadDTO = fileService
+                .loadFileAsResource(
+                        username,
+                        fileId
+                );
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(downloadDTO.getMimeType()))
+                .header(
+                        HttpHeaders.CONTENT_DISPOSITION,
+                        ContentDisposition.attachment()
+                                .filename(downloadDTO.getFileName(), StandardCharsets.UTF_8)
+                                .build()
+                                .toString()
+                )
+                .body(downloadDTO.getResource());
     }
 
     // IMPORTANT Si le endpoint marche pas c'est probablement que Spring Boot n'autorise pas les requests autre que GET avec un ancien csrf token.
