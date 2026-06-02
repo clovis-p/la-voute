@@ -1,0 +1,23 @@
+{
+	email {$ACME_EMAIL:admin@example.com}
+}
+
+{$DOMAIN} {
+	{$CADDY_BASIC_AUTH}
+
+	@apex host lavoute.xyz
+	handle @apex {
+		redir https://www.lavoute.xyz{uri} permanent
+	}
+
+	@backend path /api/* /login /logout
+	handle @backend {
+		reverse_proxy app:8080
+	}
+
+	handle {
+		root * /srv
+		try_files {path} /index.html
+		file_server
+	}
+}
