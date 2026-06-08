@@ -3,16 +3,14 @@ package xyz.lavoute.web.controller;
 import lombok.extern.java.Log;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.support.MethodReplacer;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import xyz.lavoute.web.dto.RegistrationRequestDTO;
-import xyz.lavoute.web.dto.UpdateProfileRequestDTO;
-import xyz.lavoute.web.dto.UpdatedProfilePicDTO;
-import xyz.lavoute.web.dto.UserResponseDTO;
+import xyz.lavoute.web.dto.*;
 import xyz.lavoute.web.exceptions.*;
 import xyz.lavoute.web.exceptions.Error;
 import xyz.lavoute.web.services.UserService;
@@ -47,11 +45,20 @@ public class UserController {
      * @return a dto containing the user information
      */
     @GetMapping("/me")
-    public ResponseEntity<UserResponseDTO> getSessionUserInfo() {
+    public ResponseEntity<MeResponseDTO> getSessionUserInfo() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String username = auth.getName();
 
-        UserResponseDTO response = userService.getUserProfileInformation(username);
+        MeResponseDTO response = userService.getUserProfileInformation(username);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    @GetMapping("/obtain-picture")
+    public ResponseEntity<PictureDTO> getUserPicture() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String username = auth.getName();
+
+        PictureDTO response = userService.getUserPicture(username);
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
@@ -108,7 +115,7 @@ public class UserController {
     }
 
     @ExceptionHandler(ProfilePictureErrorException.class)
-    @ResponseStatus(HttpStatus.NOT_MODIFIED)
+    @ResponseStatus(HttpStatus.UNPROCESSABLE_CONTENT)
     @ResponseBody
     Error handleProfilePictureErrorException(ProfilePictureErrorException exception) {
         return new Error(exception.getMessage());

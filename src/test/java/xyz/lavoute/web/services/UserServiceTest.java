@@ -7,6 +7,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
+import xyz.lavoute.web.dto.MeResponseDTO;
 import xyz.lavoute.web.dto.RegistrationRequestDTO;
 import xyz.lavoute.web.dto.UpdateProfileRequestDTO;
 import xyz.lavoute.web.dto.UserResponseDTO;
@@ -193,7 +194,7 @@ class UserServiceTest {
     void givenExistingUser_whenGettingProfileInformation_ThenProfileInformationIsReturned() {
         userRepository.save(user);
 
-        UserResponseDTO result = userService.getUserProfileInformation(user.getUsername());
+        MeResponseDTO result = userService.getUserProfileInformation(user.getUsername());
 
         assertEquals(user.getUsername(), result.getUsername());
         assertEquals(user.getFirstName(), result.getFirstName());

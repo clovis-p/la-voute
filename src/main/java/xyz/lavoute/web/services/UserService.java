@@ -116,9 +116,19 @@ public class UserService {
      * @param username the username of the profile we want to see / the person currently authenticated
      * @return a dto containing all the necessary information
      */
-    public UserResponseDTO getUserProfileInformation(String username) {
+    public MeResponseDTO getUserProfileInformation(String username) {
         User userEntity = getUserEntity(username);
-        return new UserResponseDTO(userEntity.getUsername(), userEntity.getFirstName(), userEntity.getLastName(), userEntity.getProfilePic());
+        return new MeResponseDTO(userEntity.getUsername(), userEntity.getFirstName(), userEntity.getLastName());
+    }
+
+    /**
+     * Obtain the user's profile picture
+     * @param username the username of the person currently authenticated
+     * @return a dto containing only the picture
+     */
+    public PictureDTO getUserPicture(String username) {
+        User userEntity = getUserEntity(username);
+        return new PictureDTO(userEntity.getProfilePic());
     }
 
     /**
@@ -130,6 +140,10 @@ public class UserService {
     public UpdatedProfilePicDTO saveNewProfilePicture(String username, MultipartFile picture) {
         User userEntity = getUserEntity(username);
 
+        //Limit the size to 4mb
+        if (picture.getSize() > 4194304) {
+            throw new ProfilePictureErrorException("La photo de profil mise en ligne est trop lourde (Maximum 4mo).");
+        }
         //Encoding the uploaded picture
         try {
             byte[] bytes = picture.getBytes();

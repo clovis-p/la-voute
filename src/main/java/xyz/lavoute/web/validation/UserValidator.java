@@ -13,12 +13,12 @@ import java.util.Optional;
 @Component
 public class UserValidator {
 
-    private final UserRepository password;
+    private final UserRepository userRepository;
     private final BCryptPasswordEncoder encoder;
 
 
     public UserValidator(UserRepository userRepository) {
-        this.password = userRepository;
+        this.userRepository = userRepository;
         this.encoder = new BCryptPasswordEncoder();
     }
 
@@ -83,7 +83,7 @@ public class UserValidator {
         if (username.length() < 3 || username.length() > 50) {
             message += "Le nom d'utilisateur doit être entre 3 et 50 caractères. \n";
         }
-        Optional<User> userFound = password.findUserByUsername(username);
+        Optional<User> userFound = userRepository.findUserByUsername(username);
         if (userFound.isPresent()) {
             message += "Un utilisateur existe déjà avec ce username. \n";
         }
