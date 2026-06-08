@@ -1,0 +1,8 @@
+services:
+  app:
+    ports:
+      - "8080:8080"
+
+  caddy:
+    environment:
+      DOMAIN: ":80"
