@@ -12,6 +12,7 @@ import xyz.lavoute.web.dto.FileDownloadDTO;
 import xyz.lavoute.web.dto.FileGetDTO;
 import xyz.lavoute.web.dto.PatchRequest;
 import xyz.lavoute.web.exceptions.StorageException;
+import xyz.lavoute.web.exceptions.UserNotFoundException;
 import xyz.lavoute.web.models.File;
 import xyz.lavoute.web.models.User;
 import xyz.lavoute.web.repositories.FileRepository;
@@ -121,7 +122,7 @@ public class FileService {
         File parentFile = getParentDirectory(parentDirId, userFound);
         File dirEntity = new File(storageRoot.toString(), name, true, true, userFound, parentFile);
         //Saving a first time to get the id
-        fileRepository.save(dirEntity);
+        dirEntity = fileRepository.save(dirEntity);
 
         //Obtaining the hashed name from the id
         String hashedFileName = obtainHashedFileName(dirEntity.getId());
@@ -260,7 +261,7 @@ public class FileService {
   
     /*
      * Get the file resource with the hashed name (path)
-     * @param username the username of the currently connected user
+     * @param username the username of the **file owner otherwise corrupted image**
      * @param fileId the id of the file to get the resource from
      * @return a file DTO containing the resource (file content), the name and the mime type (file type)
      */
@@ -366,7 +367,7 @@ public class FileService {
     private User getUserEntity(String username) {
         Optional<User> user = userRepository.findUserByUsername(username);
         if (user.isEmpty()) {
-            throw new StorageException("L'utilisateur n'existe pas.");
+            throw new UserNotFoundException("L'utilisateur n'existe pas.");
         }
         return user.get();
     }

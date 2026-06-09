@@ -32,26 +32,26 @@ const userMenuItems = [
 
 <template>
   <div class="p-2">
-  <Toolbar>
-    <template #start>
-      <div class="flex items-center gap-2">
-        <Button class="p-0!" text plain @click="router.push('/accueil')">
-          <AppLogo class="h-8 w-8" />
-        </Button>
-      </div>
-    </template>
+    <Toolbar>
+      <template #start>
+        <div class="flex items-center gap-2">
+          <Button class="p-0!" text plain @click="router.push('/accueil')">
+            <AppLogo class="h-8 w-8" />
+          </Button>
+        </div>
+      </template>
 
-    <template #end>
-      <div class="flex items-center gap-2">
-        <SplitButton class="user-btn" :model="userMenuItems">
+      <template #end>
+        <div class="flex items-center gap-2">
+          <SplitButton class="user-btn" :model="userMenuItems">
           <span class="flex items-center font-bold">
             <Avatar :image="DefaultAvatar"/>
             <span class="mx-2">{{username}}</span>
           </span>
-        </SplitButton>
-      </div>
-    </template>
-  </Toolbar>
+          </SplitButton>
+        </div>
+      </template>
+    </Toolbar>
   </div>
 </template>
 
