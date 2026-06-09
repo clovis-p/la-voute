@@ -42,7 +42,7 @@ public class UserValidatorTest {
      */
     @Test
     void shouldReturnEmptyString_whenUserIsValid() {
-        String result = userValidator.validateUser(user);
+        String result = userValidator.validateRegistration(user);
         assertEquals("", result);
     }
 
@@ -52,25 +52,25 @@ public class UserValidatorTest {
     @Test
     void shouldThrowUserInvalidInformationsException_whenUsernameIsNull() {
         user.setUsername(null);
-        assertThrows(UserInvalidInformationsException.class, () -> userValidator.validateUser(user));
+        assertThrows(UserInvalidInformationsException.class, () -> userValidator.validateRegistration(user));
     }
 
     @Test
     void shouldThrowUserInvalidInformationsException_whenFirstNameIsNull() {
         user.setFirstName(null);
-        assertThrows(UserInvalidInformationsException.class, () -> userValidator.validateUser(user));
+        assertThrows(UserInvalidInformationsException.class, () -> userValidator.validateRegistration(user));
     }
 
     @Test
     void shouldThrowUserInvalidInformationsException_whenLastNameIsNull() {
         user.setLastName(null);
-        assertThrows(UserInvalidInformationsException.class, () -> userValidator.validateUser(user));
+        assertThrows(UserInvalidInformationsException.class, () -> userValidator.validateRegistration(user));
     }
 
     @Test
     void shouldThrowUserInvalidInformationsException_whenPasswordIsNull() {
         user.setPassword(null);
-        assertThrows(UserInvalidInformationsException.class, () -> userValidator.validateUser(user));
+        assertThrows(UserInvalidInformationsException.class, () -> userValidator.validateRegistration(user));
     }
 
     /**
@@ -79,21 +79,21 @@ public class UserValidatorTest {
     @Test
     void shouldReturnAdaptedError_whenUsernameDontHaveEnoughCharacters() {
         user.setUsername("us");
-        String result = userValidator.validateUser(user);
+        String result = userValidator.validateRegistration(user);
         assertEquals("Le nom d'utilisateur doit être entre 3 et 50 caractères. \n", result);
     }
 
     @Test
     void shouldReturnAdaptedError_whenUsernameHaveTooMuchCharacters() {
         user.setUsername("TheUsernameIsLongerThan50CharactersAndItWillReturnAnErrorMessage");
-        String result = userValidator.validateUser(user);
+        String result = userValidator.validateRegistration(user);
         assertEquals("Le nom d'utilisateur doit être entre 3 et 50 caractères. \n", result);
     }
 
     @Test
     void shouldReturnAdaptedError_whenUsernameIsAlreadyTaken() {
-        when(userRepository.findUserByUsername("username")).thenReturn(Optional.of(new User("username", "Test", "Test", "Password123!")));
-        String result = userValidator.validateUser(user);
+        when(userRepository.findUserByUsername("username")).thenReturn(Optional.of(new User("username", "Test", "Test", "Password123!", "null")));
+        String result = userValidator.validateRegistration(user);
         assertEquals("Un utilisateur existe déjà avec ce username. \n", result);
 
     }
@@ -104,14 +104,14 @@ public class UserValidatorTest {
     @Test
     void shouldReturnAdaptedError_whenFirstNameDontHaveEnoughCharacters() {
         user.setFirstName("us");
-        String result = userValidator.validateUser(user);
+        String result = userValidator.validateRegistration(user);
         assertEquals("Le prénom doit être entre 3 et 50 caractères. \n", result);
     }
 
     @Test
     void shouldReturnAdaptedError_whenFirstNameHaveTooMuchCharacters() {
         user.setFirstName("TheFirstNameIsLongerThan50CharactersAndItWillReturnAnErrorMessage");
-        String result = userValidator.validateUser(user);
+        String result = userValidator.validateRegistration(user);
         assertEquals("Le prénom doit être entre 3 et 50 caractères. \n", result);
     }
 
@@ -121,14 +121,14 @@ public class UserValidatorTest {
     @Test
     void shouldReturnAdaptedError_whenLastNameDontHaveEnoughCharacters() {
         user.setLastName("us");
-        String result = userValidator.validateUser(user);
+        String result = userValidator.validateRegistration(user);
         assertEquals("Le nom doit être entre 3 et 50 caractères. \n", result);
     }
 
     @Test
     void shouldReturnAdaptedError_whenLastNameHaveTooMuchCharacters() {
         user.setLastName("TheLastNameIsLongerThan50CharactersAndItWillReturnAnErrorMessage");
-        String result = userValidator.validateUser(user);
+        String result = userValidator.validateRegistration(user);
         assertEquals("Le nom doit être entre 3 et 50 caractères. \n", result);
     }
 
@@ -138,42 +138,42 @@ public class UserValidatorTest {
     @Test
     void shouldReturnAdaptedError_whenPasswordDontHaveEnoughCharacters() {
         user.setPassword("Pass1!");
-        String result = userValidator.validateUser(user);
+        String result = userValidator.validateRegistration(user);
         assertEquals("Le mot de passe doit être entre 8 et 100 caractères. \n", result);
     }
 
     @Test
     void shouldReturnAdaptedError_whenPasswordHaveTooMuchCharacters() {
         user.setPassword("1!PasswordPasswordPasswordPasswordPasswordPasswordPasswordPasswordPasswordPasswordPasswordPasswordPasswordPassword");
-        String result = userValidator.validateUser(user);
+        String result = userValidator.validateRegistration(user);
         assertEquals("Le mot de passe doit être entre 8 et 100 caractères. \n", result);
     }
 
     @Test
     void shouldReturnAdaptedError_whenPasswordIsMissingAnUppercaseCharacter() {
         user.setPassword("password1!");
-        String result = userValidator.validateUser(user);
+        String result = userValidator.validateRegistration(user);
         assertEquals("Le mot de passe doit avoir au moins une lettre majuscule. \n", result);
     }
 
     @Test
     void shouldReturnAdaptedError_whenPasswordIsMissingALowercaseCharacter() {
         user.setPassword("PASSWORD1!");
-        String result = userValidator.validateUser(user);
+        String result = userValidator.validateRegistration(user);
         assertEquals("Le mot de passe doit avoir au moins une lettre minuscule. \n", result);
     }
 
     @Test
     void shouldReturnAdaptedError_whenPasswordIsMissingANumberCharacter() {
         user.setPassword("Password!");
-        String result = userValidator.validateUser(user);
+        String result = userValidator.validateRegistration(user);
         assertEquals("Le mot de passe doit avoir au moins un chiffre. \n", result);
     }
 
     @Test
     void shouldReturnAdaptedError_whenPasswordIsMissingASymbolCharacter() {
         user.setPassword("Password1");
-        String result = userValidator.validateUser(user);
+        String result = userValidator.validateRegistration(user);
         assertEquals("Le mot de passe doit avoir au moins un symbole. \n", result);
     }
 }

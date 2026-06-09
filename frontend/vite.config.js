@@ -13,12 +13,6 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     emptyOutDir: true,
-    rollupOptions: {
-      input: 'src/main.js',
-      output: {
-        entryFileNames: '[name].js',
-      },
-    },
   },
   server: {
     proxy: {

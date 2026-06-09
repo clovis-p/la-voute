@@ -19,16 +19,17 @@ public class User {
     private String lastName;
     private String password;
     private Boolean isAdmin;
+    @Column(columnDefinition = "LONGTEXT")
     private String profilePic;
     private boolean isBanned;
 
-    public User(String username, String firstName, String lastName, String password) {
+    public User(String username, String firstName, String lastName, String password, String profilePic) {
         this.username = username;
         this.firstName = firstName;
         this.lastName = lastName;
         this.password = password;
         this.isAdmin = false;
-        this.profilePic = "ressources/images/user.png";
+        this.profilePic = profilePic;
         this.isBanned = false;
     }
 }
