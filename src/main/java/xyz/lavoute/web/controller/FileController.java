@@ -1,17 +1,13 @@
 package xyz.lavoute.web.controller;
 
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.*;
-import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.parameters.P;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -19,9 +15,9 @@ import xyz.lavoute.web.dto.FileDownloadDTO;
 import xyz.lavoute.web.dto.FileGetDTO;
 import xyz.lavoute.web.dto.FileVisibilityDTO;
 import xyz.lavoute.web.dto.PatchRequest;
+import xyz.lavoute.web.exceptions.*;
 import xyz.lavoute.web.exceptions.Error;
 import xyz.lavoute.web.exceptions.NoOwnershipOnSharedFileException;
-import xyz.lavoute.web.exceptions.NoPermissionOnSharedFileException;
 import xyz.lavoute.web.exceptions.StorageException;
 import xyz.lavoute.web.exceptions.UserNotFoundException;
 import xyz.lavoute.web.models.File;
@@ -33,12 +29,6 @@ import xyz.lavoute.web.services.PermissionService;
 import xyz.lavoute.web.services.ShareService;
 import xyz.lavoute.web.services.UserService;
 
-import javax.swing.text.html.Option;
-import java.io.FileNotFoundException;
-import java.net.URI;
-import java.nio.file.AccessDeniedException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import java.security.Principal;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
@@ -130,12 +120,52 @@ public class FileController {
         return ResponseEntity.status(HttpStatus.ACCEPTED).build();
     }
   
-    @GetMapping("/{id}/download")
-    public ResponseEntity<Resource> downloadFile(@PathVariable Integer id) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        String username = auth.getName();
+    @GetMapping("/{fileId}/download")
+    public ResponseEntity<Resource> downloadFile(Principal principal, @PathVariable Integer fileId) {
+        Optional<File> maybeFile = fileService.getFileById(fileId);
 
-        FileDownloadDTO downloadDTO = fileService.loadFileAsResource(username, id);
+        if (maybeFile.isEmpty()) {
+            throw new DownloadNonExistingFileException("Tried to download a file that doesn't exist");
+        }
+
+        User fileOwner = maybeFile.get().getUser();
+
+        if (fileIsPublic(maybeFile.get())) {
+            LOGGER.info("Downloaded file with id: " + maybeFile.get().getId() + " because file is public");
+            return getDownloadedFile(fileOwner.getUsername(), maybeFile.get().getId());
+        } else {
+            if (principal == null) {
+                throw new UnauthenticatedUserOnPrivateFileException("User is not connected while the file is not public");
+            }
+
+            String connectedUsername = principal.getName();
+            Optional<User> maybeConnectedUser = userService.getUserByUsername(connectedUsername);
+
+            if (maybeConnectedUser.isEmpty()) {
+                throw new UsernameNotFoundException(connectedUsername);
+            }
+
+            if (userHasPermissionOnFile(maybeConnectedUser.get(), maybeFile.get())) {
+                LOGGER.info(
+                        "User with name: " + connectedUsername + " downloaded file with id: " + maybeFile.get().getId()
+                                + " because user has permissions on file"
+                );
+                return getDownloadedFile(fileOwner.getUsername(), maybeFile.get().getId());
+            }
+
+            if(userIsFileOwner(maybeConnectedUser.get(), maybeFile.get())) {
+                LOGGER.info("Gave file with id: " + maybeFile.get().getId() + " to file owner with id: " + fileOwner.getId());
+                return getDownloadedFile(fileOwner.getUsername(), maybeFile.get().getId());
+            }
+        }
+
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .build();
+    }
+
+    private ResponseEntity<Resource> getDownloadedFile(String username, Integer fileId) {
+        FileDownloadDTO downloadDTO = fileService.loadFileAsResource(username, fileId);
 
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(downloadDTO.getMimeType()))
@@ -147,7 +177,6 @@ public class FileController {
                                 .toString()
                 )
                 .body(downloadDTO.getResource());
-
     }
 
     // IMPORTANT Si le endpoint marche pas c'est probablement que Spring Boot n'autorise pas les requests autre que GET avec un ancien csrf token.
@@ -156,18 +185,35 @@ public class FileController {
     public ResponseEntity<Void> fileSharing(
             @PathVariable int fileId,
             @RequestBody(required = false) List<String> usernames
-    ) throws FileNotFoundException {
+    ) {
         Optional<File> file = fileService.getFileById(fileId);
 
         if (file.isEmpty()) {
-            throw new FileNotFoundException();
+            throw new SharingAttemptOnNonExistentFileException("Tried to share a file that doesn't exist");
         }
 
         Authentication auth = SecurityContextHolder
                 .getContext()
                 .getAuthentication();
-        String connectedUsername = auth.getName();
+
+        Optional<User> connectedUser = userService.getUserByUsername(auth.getName());
+
+        if (connectedUser.isEmpty()) {
+            throw new UsernameNotFoundException("Connected user somehow does not exist");
+        }
+
+        String connectedUsername = connectedUser.get().getUsername();
+
         LOGGER.info("Connected user named: " + connectedUsername + " is attempting to share file with id: " + fileId);
+
+        if (!userIsFileOwner(connectedUser.get(), file.get())) {
+            User fileOwner = file.get().getUser();
+            throw new NoOwnershipOnSharedFileException(
+                    connectedUser.get().getId(),
+                    fileOwner.getId(),
+                    file.get().getId()
+            );
+        }
 
         shareService.deleteSharesByFile(file.get());
 
@@ -207,7 +253,7 @@ public class FileController {
     }
 
     @GetMapping("{fileId}/visibility")
-    public ResponseEntity<FileVisibilityDTO> getFileVisibility(@PathVariable int fileId) throws FileNotFoundException {
+    public ResponseEntity<FileVisibilityDTO> getFileVisibility(@PathVariable int fileId) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String username = auth.getName();
 
@@ -215,7 +261,7 @@ public class FileController {
         Optional<User> user = userService.getUserByUsername(username);
 
         if (file.isEmpty()) {
-            throw new FileNotFoundException();
+            throw new SharingAttemptOnNonExistentFileException("Tried to share a file that doesn't exist");
         }
         if (user.isEmpty()) {
             throw new UsernameNotFoundException(username);
@@ -253,10 +299,10 @@ public class FileController {
     public ResponseEntity<FileGetDTO> getSharedFile(
             @PathVariable int fileId,
             Principal principal
-    ) throws FileNotFoundException {
+    ) throws AccessOnNonExistingFileException {
         Optional<File> maybeFile = fileService.getFileById(fileId);
 
-        if (maybeFile.isEmpty()) throw new FileNotFoundException();
+        if (maybeFile.isEmpty()) throw new AccessOnNonExistingFileException("Tried to get information on a file that doesn't exist");
 
         ResponseEntity<FileGetDTO> response = ResponseEntity
                 .status(HttpStatus.OK)
