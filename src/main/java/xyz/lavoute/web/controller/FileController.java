@@ -192,8 +192,25 @@ public class FileController {
         Authentication auth = SecurityContextHolder
                 .getContext()
                 .getAuthentication();
-        String connectedUsername = auth.getName();
+
+        Optional<User> connectedUser = userService.getUserByUsername(auth.getName());
+
+        if (connectedUser.isEmpty()) {
+            throw new UsernameNotFoundException("Connected user somehow does not exist");
+        }
+
+        String connectedUsername = connectedUser.get().getUsername();
+
         LOGGER.info("Connected user named: " + connectedUsername + " is attempting to share file with id: " + fileId);
+
+        if (!userIsFileOwner(connectedUser.get(), file.get())) {
+            User fileOwner = file.get().getUser();
+            throw new NoOwnershipOnSharedFileException(
+                    connectedUser.get().getId(),
+                    fileOwner.getId(),
+                    file.get().getId()
+            );
+        }
 
         shareService.deleteSharesByFile(file.get());
 
