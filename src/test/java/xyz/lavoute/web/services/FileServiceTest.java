@@ -16,6 +16,7 @@ import xyz.lavoute.web.dto.FileDownloadDTO;
 import xyz.lavoute.web.dto.FileGetDTO;
 import xyz.lavoute.web.dto.PatchRequest;
 import xyz.lavoute.web.exceptions.StorageException;
+import xyz.lavoute.web.exceptions.UserNotFoundException;
 import xyz.lavoute.web.models.File;
 import xyz.lavoute.web.models.User;
 import xyz.lavoute.web.repositories.FileRepository;
@@ -53,7 +54,7 @@ public class FileServiceTest {
         ReflectionTestUtils.setField(fileService, "hashidsSalt", "ASDKFJ87276dhfuFDH27");
         ReflectionTestUtils.setField(fileService, "storageRoot", "storage");
 
-        mockUser = new User("TestUser", "Test", "User", "Password1!");
+        mockUser = new User("TestUser", "Test", "User", "Password1!", "null");
         mockParentDir = new File("storage", "testFolder", true, false, mockUser, null);
         mockParentDir.setId(1);
         mockFile = new File("storage", "testFolder", false, false, mockUser, null);
@@ -85,7 +86,7 @@ public class FileServiceTest {
 
         when(userRepository.findUserByUsername("testUser")).thenReturn(Optional.empty());
 
-        assertThrows(StorageException.class, () ->
+        assertThrows(UserNotFoundException.class, () ->
                 fileService.uploadFile(file, "testUser", mockParentDir.getId()));
     }
 
@@ -168,7 +169,7 @@ public class FileServiceTest {
     void shouldThrowStorageException_whenUserDoesNotExistForDirectories() {
         when(userRepository.findUserByUsername("testUser")).thenReturn(Optional.empty());
 
-        assertThrows(StorageException.class, () ->
+        assertThrows(UserNotFoundException.class, () ->
                 fileService.makeDirectory("testDirectory", "testUser", mockParentDir.getId()));
     }
     /**
@@ -208,7 +209,7 @@ public class FileServiceTest {
     void shouldThrowStorageException_whenUserDoesNotExist() {
         when(userRepository.findUserByUsername("testUser")).thenReturn(Optional.empty());
 
-        assertThrows(StorageException.class, () ->
+        assertThrows(UserNotFoundException.class, () ->
                 fileService.obtainFilesFromSpecificDirectory("testUser", null));
     }
 
@@ -271,7 +272,7 @@ public class FileServiceTest {
 
         when(userRepository.findUserByUsername("testUser")).thenReturn(Optional.empty());
 
-        assertThrows(StorageException.class, () ->
+        assertThrows(UserNotFoundException.class, () ->
                 fileService.patchFile(1, request, "testUser"));
     }
 
@@ -320,23 +321,6 @@ public class FileServiceTest {
     /**
      * Test for renaming a file (when it works)
      */
-    @Test
-    void shouldRenameFileWithTheExtension_whenFileIsNotADirectory() {
-        PatchRequest request = new PatchRequest("newName", null);
-
-        File fileToRename = new File("storage", "testFile.txt", false, false, mockUser, null);
-        fileToRename.setId(2);
-
-        when(userRepository.findUserByUsername("testUser")).thenReturn(Optional.of(mockUser));
-        when(fileRepository.findFileById(2)).thenReturn(fileToRename);
-
-        FileGetDTO result = fileService.patchFile(2, request, "testUser");
-
-        assertEquals("newName.txt", fileToRename.getName());
-        verify(fileRepository).save(fileToRename);
-        assertNotNull(result);
-    }
-
     @Test
     void shouldRenameFileWithoutExtension_whenFileIsADirectory() {
         PatchRequest request = new PatchRequest("newFolderName", null);

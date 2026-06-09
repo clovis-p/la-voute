@@ -1,7 +1,9 @@
 package xyz.lavoute.web.validation;
 
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 import xyz.lavoute.web.dto.RegistrationRequestDTO;
+import xyz.lavoute.web.dto.UpdateProfileRequestDTO;
 import xyz.lavoute.web.exceptions.UserInvalidInformationsException;
 import xyz.lavoute.web.models.User;
 import xyz.lavoute.web.repositories.UserRepository;
@@ -12,62 +14,113 @@ import java.util.Optional;
 public class UserValidator {
 
     private final UserRepository userRepository;
+    private final BCryptPasswordEncoder encoder;
+
 
     public UserValidator(UserRepository userRepository) {
         this.userRepository = userRepository;
+        this.encoder = new BCryptPasswordEncoder();
     }
 
     /**
-     * Validating user's information according to certain criteria for each
-     *
-     * @param user the user to validate
-     * @return an error message adapted to the errors // empty if no errors
-     * @throws UserInvalidInformationsException throws and exception if the information are null
+     * Validation when a user is registering
+     * @param user the dto of the user information
+     * @return the appropriate error message
      */
-    public String validateUser(RegistrationRequestDTO user) {
-        String returnMessage = "";
-
+    public String validateRegistration(RegistrationRequestDTO user) {
         if (user.getFirstName() == null || user.getLastName() == null || user.getUsername() == null || user.getPassword() == null) {
             throw new UserInvalidInformationsException("Certains champs sont null.");
         }
 
-        if (user.getFirstName().length() < 3 || user.getFirstName().length() > 50) {
-            returnMessage += "Le prénom doit être entre 3 et 50 caractères. \n";
-        }
-
-        if (user.getLastName().length() < 3 || user.getLastName().length() > 50) {
-            returnMessage += "Le nom doit être entre 3 et 50 caractères. \n";
-        }
-
-        if (user.getUsername().length() < 3 || user.getUsername().length() > 50) {
-            returnMessage += "Le nom d'utilisateur doit être entre 3 et 50 caractères. \n";
-        }
-
-        Optional<User> userFound = userRepository.findUserByUsername(user.getUsername());
-        if (userFound.isPresent()) {
-            returnMessage += "Un utilisateur existe déjà avec ce username. \n";
-        }
-
-        if (user.getPassword().length() < 8 || user.getPassword().length() > 100) {
-            returnMessage += "Le mot de passe doit être entre 8 et 100 caractères. \n";
-        }
-
-        if (!user.getPassword().matches(".*[A-Z].*")) {
-            returnMessage += "Le mot de passe doit avoir au moins une lettre majuscule. \n";
-        }
-
-        if (!user.getPassword().matches(".*[a-z].*")) {
-            returnMessage += "Le mot de passe doit avoir au moins une lettre minuscule. \n";
-        }
-
-        if (!user.getPassword().matches(".*[0-9].*")) {
-            returnMessage += "Le mot de passe doit avoir au moins un chiffre. \n";
-        }
-
-        if (!user.getPassword().matches(".*[^A-Za-z\\d].*")) {
-            returnMessage += "Le mot de passe doit avoir au moins un symbole. \n";
-        }
-
+        String returnMessage = "";
+        returnMessage += validateFirstName(user.getFirstName());
+        returnMessage += validateLastName(user.getLastName());
+        returnMessage += validateUsername(user.getUsername());
+        returnMessage += validatePassword(user.getPassword());
         return returnMessage;
+    }
+
+    /**
+     * Validation when a user is modifying their profile
+     * @param user the userDTO with the modified information
+     * @return an appropriate error message
+     */
+    public String validateProfileUpdate(UpdateProfileRequestDTO user, String oldPassword) {
+        String returnMessage = "";
+        if (user.getFirstName() != null && !user.getFirstName().isEmpty()) {
+            returnMessage += validateFirstName(user.getFirstName());
+        }
+        if (user.getLastName() != null && !user.getLastName().isEmpty()) {
+            returnMessage += validateLastName(user.getLastName());
+        }
+        if (user.getPassword() != null && !user.getPassword().isEmpty()) {
+            returnMessage += validatePassword(user.getPassword());
+            if (!verifyOldPassword(user.getOldPassword(), oldPassword)) {
+                returnMessage += "L'ancien mot de passe entré est mauvais.";
+            }
+        }
+        return returnMessage;
+    }
+
+    private String validateFirstName(String firstName) {
+        String message = "";
+        if (firstName.length() < 3 || firstName.length() > 50) {
+            message += "Le prénom doit être entre 3 et 50 caractères. \n";
+        }
+        return message;
+    }
+
+    private String validateLastName(String lastName) {
+        String message = "";
+        if (lastName.length() < 3 || lastName.length() > 50) {
+            message += "Le nom doit être entre 3 et 50 caractères. \n";
+        }
+        return message;
+    }
+
+    private String validateUsername(String username) {
+        String message = "";
+        if (username.length() < 3 || username.length() > 50) {
+            message += "Le nom d'utilisateur doit être entre 3 et 50 caractères. \n";
+        }
+        Optional<User> userFound = userRepository.findUserByUsername(username);
+        if (userFound.isPresent()) {
+            message += "Un utilisateur existe déjà avec ce username. \n";
+        }
+        return message;
+    }
+
+    private String validatePassword(String password) {
+        String message = "";
+        if (password.length() < 8 || password.length() > 100) {
+            message += "Le mot de passe doit être entre 8 et 100 caractères. \n";
+        }
+
+        if (!password.matches(".*[A-Z].*")) {
+            message += "Le mot de passe doit avoir au moins une lettre majuscule. \n";
+        }
+
+        if (!password.matches(".*[a-z].*")) {
+            message += "Le mot de passe doit avoir au moins une lettre minuscule. \n";
+        }
+
+        if (!password.matches(".*[0-9].*")) {
+            message += "Le mot de passe doit avoir au moins un chiffre. \n";
+        }
+
+        if (!password.matches(".*[^A-Za-z\\d].*")) {
+            message += "Le mot de passe doit avoir au moins un symbole. \n";
+        }
+        return message;
+    }
+
+    /**
+     * Verify if the old password entered is correct
+     * @param passwordToVerify the password entered in the form to verify
+     * @param oldPassword the password encoded in the database
+     * @return true if it's fine, false if not
+     */
+    private boolean verifyOldPassword(String passwordToVerify, String oldPassword) {
+        return encoder.matches(passwordToVerify, oldPassword);
     }
 }

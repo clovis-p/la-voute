@@ -23,6 +23,7 @@ import xyz.lavoute.web.exceptions.Error;
 import xyz.lavoute.web.exceptions.NoOwnershipOnSharedFileException;
 import xyz.lavoute.web.exceptions.NoPermissionOnSharedFileException;
 import xyz.lavoute.web.exceptions.StorageException;
+import xyz.lavoute.web.exceptions.UserNotFoundException;
 import xyz.lavoute.web.models.File;
 import xyz.lavoute.web.models.Permission;
 import xyz.lavoute.web.models.Share;
@@ -45,7 +46,7 @@ import java.util.List;
 import java.util.Optional;
 
 @RestController
-@CrossOrigin
+@CrossOrigin //TODO Add specific domain for production
 @RequestMapping("/api/files")
 public class FileController {
     private static final Logger LOGGER = LoggerFactory.getLogger(FileController.class);
@@ -321,6 +322,13 @@ public class FileController {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ResponseBody
     Error handleStorageException(StorageException exception) {
+        return new Error(exception.getMessage());
+    }
+
+    @ExceptionHandler(UserNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ResponseBody
+    Error handleUserNotFoundException(UserNotFoundException exception) {
         return new Error(exception.getMessage());
     }
 }
