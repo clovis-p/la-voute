@@ -6,11 +6,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import xyz.lavoute.web.dto.UserGetDTO;
-import xyz.lavoute.web.exceptions.DeletionException;
-import xyz.lavoute.web.exceptions.NotAnAdministratorException;
-import xyz.lavoute.web.exceptions.UserInvalidInformationsException;
-import xyz.lavoute.web.services.AdminService;
+import xyz.lavoute.web.exceptions.*;
 import xyz.lavoute.web.exceptions.Error;
+import xyz.lavoute.web.services.AdminService;
 
 import java.util.Collection;
 
@@ -25,9 +23,13 @@ public class AdminController {
         this.adminService = adminService;
     }
 
+    /**
+     * Called to delete a user and all his data (files, shares, permissions)
+     * @param id the id of the user
+     * @return code 200 OK if it worked
+     */
     @DeleteMapping("/{id}/delete")
     public ResponseEntity<Integer> deleteUser(@PathVariable Integer id) {
-        //TODO Ajout de la validation admin (authentication)
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String username = auth.getName();
 
@@ -35,15 +37,21 @@ public class AdminController {
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
+    /**
+     * Obtain a list of all users
+     * @return code 200 OK with a list of all the users and their basic infos
+     */
     @GetMapping("/obtain")
     public Collection<UserGetDTO> getAllUsers() {
-        //TODO Ajout de la validation admin (authentication)
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String username = auth.getName();
 
         return adminService.getAllUsers(username);
     }
 
+    /**
+     * Exceptions handling
+     */
     @ExceptionHandler(NotAnAdministratorException.class)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     @ResponseBody
@@ -51,11 +59,10 @@ public class AdminController {
         return new Error(exception.getMessage());
     }
 
-    //TODO remplacer pour le NotexistingUser machin quand que le master va être merged
-    @ExceptionHandler(UserInvalidInformationsException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(UserNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
     @ResponseBody
-    Error handleInvalidInformations(UserInvalidInformationsException exception) {
+    Error handleUserNotFoundException(UserNotFoundException exception) {
         return new Error(exception.getMessage());
     }
 

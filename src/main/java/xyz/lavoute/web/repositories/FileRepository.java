@@ -16,4 +16,6 @@ public interface FileRepository extends CrudRepository<File, Integer> {
     Collection<File> findAllByParentDirAndUser(File parentDir, User user);
 
     void deleteAllByUser(User user);
+
+    Collection<File> findAllByUser(User user);
 }
