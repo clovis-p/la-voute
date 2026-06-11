@@ -26,7 +26,9 @@ router.beforeEach(async (to) => {
     window.location.replace('/');
     return false;
   }
-  if (to.meta.requiresGuest && loggedIn) return '/accueil';
+  if (to.meta.requiresGuest && loggedIn) {
+    return '/accueil';
+  }
 });
 
 export default router;

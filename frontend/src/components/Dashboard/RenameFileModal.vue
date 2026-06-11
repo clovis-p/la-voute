@@ -32,7 +32,9 @@ const loading = ref(false);
 watch(
   () => props.file,
   (file) => {
-    if (file) newName.value = file.name.replace(/\/$/, '');
+    if (file) {
+      newName.value = file.name.replace(/\/$/, '');
+    }
   },
 );
 

@@ -58,7 +58,9 @@ const loading = ref(false);
 watch(
   () => props.visible,
   async (isVisible) => {
-    if (!isVisible || !props.file) return;
+    if (!isVisible || !props.file) {
+      return;
+    }
 
     loading.value = true;
     try {

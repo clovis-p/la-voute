@@ -174,9 +174,15 @@ const fileToDelete = ref(null);
 const uploadProgress = ref(null);
 
 function formatFileSize(bytes) {
-  if (bytes < 1024) return bytes + ' o';
-  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' Ko';
-  if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(2) + ' Mo';
+  if (bytes < 1024) {
+    return bytes + ' o';
+  }
+  if (bytes < 1024 * 1024) {
+    return (bytes / 1024).toFixed(2) + ' Ko';
+  }
+  if (bytes < 1024 * 1024 * 1024) {
+    return (bytes / (1024 * 1024)).toFixed(2) + ' Mo';
+  }
   return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' Go';
 }
 
@@ -208,7 +214,9 @@ const menu = ref(null);
 const activeFile = ref(null);
 
 const fileMenuItems = computed(() => {
-  if (!activeFile.value) return [];
+  if (!activeFile.value) {
+    return [];
+  }
   const items = [];
   if (activeFile.value.type !== 'Folder') {
     items.push({
