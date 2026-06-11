@@ -107,7 +107,9 @@ const schema = z.object({
 const resolver = zodResolver(schema);
 
 async function handleLogin({ valid, values }) {
-  if (!valid) return;
+  if (!valid) {
+    return;
+  }
 
   serverError.value = '';
   loading.value = true;
