@@ -5,10 +5,14 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import xyz.lavoute.web.dto.UserGetDTO;
 import xyz.lavoute.web.exceptions.*;
 import xyz.lavoute.web.models.File;
 import xyz.lavoute.web.models.User;
+import xyz.lavoute.web.models.Permission;
+import xyz.lavoute.web.models.Share;
 import xyz.lavoute.web.repositories.FileRepository;
 import xyz.lavoute.web.repositories.PermissionRepository;
 import xyz.lavoute.web.repositories.ShareRepository;
@@ -21,6 +25,8 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Optional;
+import java.util.List;
+import java.util.Objects;
 
 @Service
 public class AdminService {
@@ -63,8 +69,8 @@ public class AdminService {
         if (user.getUsername().equals(adminUser.getUsername())) {
             throw new DeletionException("Vous ne pouvez pas vous supprimer vous-même de l'application!");
         }
-        //Delete all the files from the user on the disk
-        deleteFilesFromDisk(user);
+        //Delete all the shares and permissions tied to the user and schedule deleting their files from the disk
+        deleteUserData(user);
         //Delete all the files from the user in the BD
         fileRepository.deleteAllByUser(user);
         //Delete the user
@@ -90,21 +96,58 @@ public class AdminService {
     }
 
     /**
-     * Delete all the files on the disk from a specific user
-     * @param user the user to delete the files from
+     * Delete shares and permissions tied to the specified user and schedule deleting their files from the disk
+     * @param user the user to delete
      */
-    private void deleteFilesFromDisk(User user) {
+    private void deleteUserData(User user) {
         Collection<File> userFiles = fileRepository.findAllByUser(user);
+        Collection<Path> filePathsToDelete = new ArrayList<>();
 
         for (File currentFile : userFiles) {
+            // Remove shares on the user's files and permissions referenced by these shares
+            List<Permission> granteePermissions = shareRepository.findSharesByFileId(currentFile)
+                    .stream()
+                    .map(Share::getPermsId)
+                    .filter(Objects::nonNull)
+                    .toList();
             shareRepository.deleteAllByFileId(currentFile);
-            permissionRepository.deleteAllByUser(user);
-            Path filePath = Paths.get(storageRoot.toString(), currentFile.getPath()).toAbsolutePath();
-            try {
-                Files.deleteIfExists(filePath);
-            } catch (IOException e) {
-                throw new StorageException("Could not delete a file from the user " + user.getUsername());
-            }
+            permissionRepository.deleteAll(granteePermissions);
+
+            filePathsToDelete.add(Paths.get(storageRoot.toString(), currentFile.getPath()).toAbsolutePath());
+        }
+
+        // Remove the shares granting this user access to other users' files before deleting the permissions they point to
+        List<Permission> userPermissions = permissionRepository.findPermissionsByUser_Id(user.getId());
+        if (!userPermissions.isEmpty()) {
+            shareRepository.deleteAllByPermsIdIn(userPermissions);
+        }
+        permissionRepository.deleteAllByUser(user);
+
+        scheduleDiskDeletion(filePathsToDelete);
+    }
+
+    /**
+     * Remove the files from disk only once the database transaction has committed
+     * @param filePaths the absolute paths of the files to delete
+     */
+    private void scheduleDiskDeletion(Collection<Path> filePaths) {
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    filePaths.forEach(AdminService.this::deleteFileFromDisk);
+                }
+            });
+        } else {
+            filePaths.forEach(this::deleteFileFromDisk);
+        }
+    }
+
+    private void deleteFileFromDisk(Path filePath) {
+        try {
+            Files.deleteIfExists(filePath);
+        } catch (IOException e) {
+            logger.error("Could not delete file " + filePath, e);
         }
     }
 

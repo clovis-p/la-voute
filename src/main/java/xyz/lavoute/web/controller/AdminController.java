@@ -53,7 +53,7 @@ public class AdminController {
      * Exceptions handling
      */
     @ExceptionHandler(NotAnAdministratorException.class)
-    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
     @ResponseBody
     Error handleNotAnAdministratorException(NotAnAdministratorException exception) {
         return new Error(exception.getMessage());
