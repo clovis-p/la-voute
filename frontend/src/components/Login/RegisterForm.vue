@@ -79,6 +79,12 @@
           {{ $form.confirmPassword.error?.message }}
         </Message>
       </div>
+      <Turnstile
+        ref="turnstileRef"
+        @verified="onTurnstileVerified"
+        @expired="onTurnstileReset"
+        @error="onTurnstileReset"
+      />
       <Message v-if="serverError" severity="error" size="small" variant="simple">
         {{ serverError }}
       </Message>
@@ -110,6 +116,7 @@ import Message from 'primevue/message';
 import { Form } from '@primevue/forms';
 import { zodResolver } from '@primevue/forms/resolvers/zod';
 import AppLogo from '@/assets/AppLogo.vue';
+import Turnstile from '@/components/Turnstile.vue';
 import axios from 'axios';
 import { ref } from 'vue';
 import { z } from 'zod';
@@ -119,6 +126,17 @@ const emit = defineEmits(['switch-to-login']);
 
 const serverError = ref('');
 const loading = ref(false);
+
+const turnstileRef = ref(null);
+const turnstileToken = ref('');
+
+function onTurnstileVerified(token) {
+  turnstileToken.value = token;
+}
+
+function onTurnstileReset() {
+  turnstileToken.value = '';
+}
 
 const initialValues = {
   firstName: '',
@@ -164,6 +182,11 @@ async function handleRegister({ valid, values }) {
     return;
   }
 
+  if (!turnstileToken.value) {
+    serverError.value = 'Veuillez compléter le captcha';
+    return;
+  }
+
   serverError.value = '';
   loading.value = true;
   try {
@@ -173,12 +196,15 @@ async function handleRegister({ valid, values }) {
       lastName: values.lastName,
       username: values.username,
       password: values.password,
+      cfTurnstileResponse: turnstileToken.value,
     });
     emit('switch-to-login');
   } catch (err) {
     serverError.value = err.response?.data?.message ?? 'Une erreur est survenue.';
   } finally {
     loading.value = false;
+    turnstileToken.value = '';
+    turnstileRef.value?.reset();
   }
 }
 </script>
