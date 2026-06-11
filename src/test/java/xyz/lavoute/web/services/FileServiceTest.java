@@ -52,6 +52,7 @@ public class FileServiceTest {
     @BeforeEach
     void setUp() {
         ReflectionTestUtils.setField(fileService, "hashidsSalt", "ASDKFJ87276dhfuFDH27");
+        ReflectionTestUtils.setField(fileService, "downloadHashidsSalt", "ZBgLXDPwAH2UdqOw6b84A7");
         ReflectionTestUtils.setField(fileService, "storageRoot", "storage");
 
         mockUser = new User("TestUser", "Test", "User", "Password1!", "null");

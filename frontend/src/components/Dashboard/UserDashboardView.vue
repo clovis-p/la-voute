@@ -42,6 +42,7 @@ async function obtainFiles() {
 
       files.value.push({
         id: datum.id,
+        downloadId: datum.downloadId,
         name: fileName,
         type: fileType,
         typeSortKey: fileType === "Folder" ? "0" : "1_" + fileType,
@@ -64,7 +65,7 @@ const fileMenuItems = computed(() => {
       icon: 'pi pi-download',
       label: 'Télécharger',
       command: () => {
-        downloadFile(activeFile.value.id);
+        downloadFile(activeFile.value.downloadId);
       }
     });
     items.push({

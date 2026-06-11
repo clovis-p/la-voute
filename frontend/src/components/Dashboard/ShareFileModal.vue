@@ -6,7 +6,7 @@ import axios from "axios";
 const props = defineProps(['visible', 'file']);
 const emit = defineEmits(['close']);
 
-const downloadUrl = computed(() => `${window.location.origin}/download/${props.file?.id}`);
+const downloadUrl = computed(() => `${window.location.origin}/download/${props.file?.downloadId}`);
 const copied = ref(false);
 const usernames = ref([]);
 const publicShare = ref(false);
