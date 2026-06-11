@@ -1,6 +1,8 @@
+<template></template>
+
 <script setup>
-import {useRoute} from "vue-router";
-import {onMounted} from "vue";
+import { useRoute } from 'vue-router';
+import { onMounted } from 'vue';
 
 const route = useRoute();
 
@@ -9,5 +11,3 @@ onMounted(() => {
   window.location.href = `/api/files/${fileId}`;
 });
 </script>
-
-<template></template>
