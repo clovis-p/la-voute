@@ -492,12 +492,12 @@ public class FileServiceTest {
 
     @Test
     void shouldUseDefaultMimeType_whenMimeTypeIsUnknown(@TempDir Path tempDir) throws IOException {
-        Path tempFile = tempDir.resolve("testFile.xyz");
+        Path tempFile = tempDir.resolve("testFile.extensionfictive");
         Files.writeString(tempFile, "test content");
 
-        File fileEntity = new File(tempDir.toString(), "testFile.xyz", false, false, mockUser, null);
+        File fileEntity = new File(tempDir.toString(), "testFile.extensionfictive", false, false, mockUser, null);
         fileEntity.setId(1);
-        fileEntity.setPath("testFile.xyz");
+        fileEntity.setPath("testFile.extensionfictive");
 
         when(userRepository.findUserByUsername("testUser")).thenReturn(Optional.of(mockUser));
         when(fileRepository.findFileById(1)).thenReturn(fileEntity);
