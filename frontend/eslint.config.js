@@ -1,4 +1,4 @@
-import pluginVue from 'eslint-plugin-vue'
+import pluginVue from 'eslint-plugin-vue';
 
 export default [
   ...pluginVue.configs['flat/recommended'],
@@ -6,6 +6,8 @@ export default [
     rules: {
       'vue/multi-word-component-names': 'off',
       'vue/block-order': ['error', { order: ['template', 'script', 'style'] }],
+      curly: ['error', 'all'],
+      'brace-style': ['error', '1tbs', { allowSingleLine: false }],
     },
   },
-]
+];
