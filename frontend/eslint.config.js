@@ -1,4 +1,4 @@
-import pluginVue from 'eslint-plugin-vue'
+import pluginVue from 'eslint-plugin-vue';
 
 export default [
   ...pluginVue.configs['flat/recommended'],
@@ -8,4 +8,4 @@ export default [
       'vue/block-order': ['error', { order: ['template', 'script', 'style'] }],
     },
   },
-]
+];
