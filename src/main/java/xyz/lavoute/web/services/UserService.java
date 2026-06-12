@@ -129,7 +129,7 @@ public class UserService {
      */
     public MeResponseDTO getUserProfileInformation(String username) {
         User userEntity = getUserEntity(username);
-        return new MeResponseDTO(userEntity.getUsername(), userEntity.getFirstName(), userEntity.getLastName());
+        return new MeResponseDTO(userEntity.getUsername(), userEntity.getFirstName(), userEntity.getLastName(), userEntity.getIsAdmin());
     }
 
     /**
