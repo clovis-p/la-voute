@@ -3,6 +3,7 @@ package xyz.lavoute.web.security;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -18,6 +19,7 @@ import xyz.lavoute.web.services.TurnstileService;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 public class SecurityConfig {
     @Bean
     public PasswordEncoder getPasswordEncoder() {
@@ -42,10 +44,12 @@ public class SecurityConfig {
                                 "/api/home",
                                 "/api/csrf",
                                 "/api/user/register",
-                                "/api/files/*",
-                                "/api/files/{fileId}/download"
+                                "/api/files/{fileId}/download",
+                                "/api/files/{fileId}"
                         )
                         .permitAll()
+                        .requestMatchers("/api/files/**").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .anyRequest()
                         .authenticated()
                 )

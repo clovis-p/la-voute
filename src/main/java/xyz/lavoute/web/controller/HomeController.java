@@ -9,7 +9,6 @@ import java.util.Map;
 import java.util.Random;
 
 @RestController
-@CrossOrigin // TODO Add specific domain for production
 @RequestMapping("/api")
 public class HomeController {
     private static final Logger LOGGER = LoggerFactory.getLogger(HomeController.class);
