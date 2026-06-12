@@ -11,8 +11,10 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
+import xyz.lavoute.web.services.TurnstileService;
 
 @Configuration
 @EnableWebSecurity
@@ -23,7 +25,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, TurnstileService turnstileService) {
         http
                 .csrf(csrf -> csrf
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
@@ -55,6 +57,10 @@ public class SecurityConfig {
                         .logoutSuccessHandler((req, res, auth) -> res.setStatus(200))
                         .deleteCookies("JSESSIONID")
                         .invalidateHttpSession(true)
+                )
+                .addFilterBefore(
+                        new TurnstileLoginFilter(turnstileService),
+                        UsernamePasswordAuthenticationFilter.class
                 );
         return http.build();
     }
