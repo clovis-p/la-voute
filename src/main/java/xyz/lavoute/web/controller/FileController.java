@@ -36,7 +36,6 @@ import java.util.List;
 import java.util.Optional;
 
 @RestController
-@CrossOrigin //TODO Add specific domain for production
 @RequestMapping("/api/files")
 public class FileController {
     private static final Logger LOGGER = LoggerFactory.getLogger(FileController.class);
