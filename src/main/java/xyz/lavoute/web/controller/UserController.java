@@ -1,9 +1,7 @@
 package xyz.lavoute.web.controller;
 
-import lombok.extern.java.Log;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.support.MethodReplacer;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -14,6 +12,7 @@ import org.springframework.web.multipart.MultipartFile;
 import xyz.lavoute.web.dto.*;
 import xyz.lavoute.web.exceptions.*;
 import xyz.lavoute.web.exceptions.Error;
+import xyz.lavoute.web.services.TurnstileService;
 import xyz.lavoute.web.services.UserService;
 
 @RestController
@@ -23,9 +22,11 @@ public class UserController {
     private static final Logger LOGGER = LoggerFactory.getLogger(UserController.class);
 
     private final UserService userService;
+    private final TurnstileService turnstileService;
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService, TurnstileService turnstileService) {
         this.userService = userService;
+        this.turnstileService = turnstileService;
     }
 
     /**
@@ -37,6 +38,9 @@ public class UserController {
      */
     @PostMapping("/register")
     public ResponseEntity<Integer> registerNewUser(@RequestBody RegistrationRequestDTO registrationRequestDto) {
+        if (turnstileService.verifyCfToken(registrationRequestDto.getCfTurnstileResponse())) {
+            throw new TurnstileVerificationException("Failed Captcha verification");
+        }
         userService.registerUser(registrationRequestDto);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
@@ -102,6 +106,13 @@ public class UserController {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ResponseBody
     Error handleInvalidInformations(UserInvalidInformationsException exception) {
+        return new Error(exception.getMessage());
+    }
+
+    @ExceptionHandler(TurnstileVerificationException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    @ResponseBody
+    Error handleTurnstileVerification(TurnstileVerificationException exception) {
         return new Error(exception.getMessage());
     }
 

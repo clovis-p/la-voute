@@ -52,6 +52,12 @@
           >
         </div>
       </div>
+      <Turnstile
+        ref="turnstileRef"
+        @verified="onTurnstileVerified"
+        @expired="onTurnstileReset"
+        @error="onTurnstileReset"
+      />
       <Message v-if="serverError" severity="error" size="small" variant="simple">
         {{ serverError }}
       </Message>
@@ -84,6 +90,7 @@ import Message from 'primevue/message';
 import { Form } from '@primevue/forms';
 import { zodResolver } from '@primevue/forms/resolvers/zod';
 import AppLogo from '@/assets/AppLogo.vue';
+import Turnstile from '@/components/Turnstile.vue';
 import axios from 'axios';
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
@@ -96,6 +103,17 @@ const router = useRouter();
 const rememberMe = ref(true);
 const serverError = ref('');
 const loading = ref(false);
+
+const turnstileRef = ref(null);
+const turnstileToken = ref('');
+
+function onTurnstileVerified(token) {
+  turnstileToken.value = token;
+}
+
+function onTurnstileReset() {
+  turnstileToken.value = '';
+}
 
 const initialValues = { username: '', password: '' };
 
@@ -111,6 +129,11 @@ async function handleLogin({ valid, values }) {
     return;
   }
 
+  if (!turnstileToken.value) {
+    serverError.value = 'Veuillez compléter la vérification anti-robot.';
+    return;
+  }
+
   serverError.value = '';
   loading.value = true;
   try {
@@ -118,6 +141,7 @@ async function handleLogin({ valid, values }) {
     const params = new URLSearchParams();
     params.append('username', values.username);
     params.append('password', values.password);
+    params.append('cf-turnstile-response', turnstileToken.value);
     await axios.post('/login', params);
     router.push('/accueil');
   } catch (err) {
@@ -128,6 +152,8 @@ async function handleLogin({ valid, values }) {
     }
   } finally {
     loading.value = false;
+    turnstileToken.value = '';
+    turnstileRef.value?.reset();
   }
 }
 </script>

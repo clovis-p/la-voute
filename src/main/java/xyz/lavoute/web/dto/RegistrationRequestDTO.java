@@ -15,6 +15,16 @@ public class RegistrationRequestDTO {
     private String lastName;
     private String password;
 
+    @ToString.Exclude
+    private String cfTurnstileResponse;
+
+    public RegistrationRequestDTO(String username, String firstName, String lastName, String password) {
+        this.username = username;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.password = password;
+    }
+
     public RegistrationRequestDTO(User user) {
         this.username = user.getUsername();
         this.firstName = user.getFirstName();
