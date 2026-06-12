@@ -48,7 +48,7 @@ public class UserController {
      * Called whenever the frontend need information from the user (username, first and last name, profile picture)
      * @return a dto containing the user information
      */
-    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping("/me")
     public ResponseEntity<MeResponseDTO> getSessionUserInfo() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -58,7 +58,7 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
-    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping("/obtain-picture")
     public ResponseEntity<PictureDTO> getUserPicture() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -73,7 +73,7 @@ public class UserController {
      * @param updateProfileRequestDTO a dto containing the needed information to edit or to verify (old password, first and last name, new password)
      * @return a dto containing the new information
      */
-    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @PutMapping("/edit")
     public ResponseEntity<UserResponseDTO> updateProfile(@RequestBody UpdateProfileRequestDTO updateProfileRequestDTO) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -88,7 +88,7 @@ public class UserController {
      * @param picture the new picture
      * @return a dto containing only the encoded profile picture for live change on the frontend
      */
-    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @PatchMapping("/update-picture")
     public ResponseEntity<UpdatedProfilePicDTO> uploadProfilePicture(@RequestParam("picture") MultipartFile picture) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();

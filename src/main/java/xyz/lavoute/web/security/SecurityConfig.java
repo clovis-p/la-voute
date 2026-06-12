@@ -44,10 +44,11 @@ public class SecurityConfig {
                                 "/api/home",
                                 "/api/csrf",
                                 "/api/user/register",
-                                "/api/files/{fileId}/download"
+                                "/api/files/{fileId}/download",
+                                "/api/files/{fileId}"
                         )
                         .permitAll()
-                        .requestMatchers("/api/files/**").hasRole("USER")
+                        .requestMatchers("/api/files/**").hasAnyRole("USER", "ADMIN")
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .anyRequest()
                         .authenticated()

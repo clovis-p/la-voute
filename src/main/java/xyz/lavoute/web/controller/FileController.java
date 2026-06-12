@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.Optional;
 
 @RestController
+@CrossOrigin
 @RequestMapping("/api/files")
 public class FileController {
     private static final Logger LOGGER = LoggerFactory.getLogger(FileController.class);
