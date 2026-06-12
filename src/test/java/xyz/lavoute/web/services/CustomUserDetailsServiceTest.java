@@ -7,6 +7,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 import xyz.lavoute.web.repositories.UserRepository;
 import xyz.lavoute.web.models.User;
 
@@ -15,6 +16,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest
 @ActiveProfiles("test")
+@TestPropertySource("classpath:application-test.properties")
 public class CustomUserDetailsServiceTest {
     @Autowired
     CustomUserDetailsService userDetailsService;

@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.core.io.Resource;
 import org.springframework.http.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -36,7 +37,7 @@ import java.util.List;
 import java.util.Optional;
 
 @RestController
-@CrossOrigin //TODO Add specific domain for production
+@CrossOrigin
 @RequestMapping("/api/files")
 public class FileController {
     private static final Logger LOGGER = LoggerFactory.getLogger(FileController.class);
@@ -64,6 +65,7 @@ public class FileController {
      * @param parentDirId the id of the parent directory, null if it's at the root
      * @return Status Accepted (202) when it worked
      */
+    @PreAuthorize("hasRole('USER')")
     @PostMapping("/upload")
     public ResponseEntity<Integer> uploadNewFile(@RequestParam("file") MultipartFile file, @RequestParam(value = "parentDirId", required = false) Integer parentDirId) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -79,6 +81,7 @@ public class FileController {
      * @param parentDirId the id of the parent directory, null if it's at the root
      * @return Status Accepted (202) when it worked
      */
+    @PreAuthorize("hasRole('USER')")
     @PostMapping("/directory")
     public ResponseEntity<Integer> createNewDirectory(@RequestParam("directoryName") String directoryName, @RequestParam(value = "parentDirId", required = false) Integer parentDirId) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -88,6 +91,7 @@ public class FileController {
         return ResponseEntity.status(HttpStatus.ACCEPTED).build();
     }
 
+    @PreAuthorize("hasRole('USER')")
     @GetMapping("/obtain")
     public Collection<FileGetDTO> obtainFilesFromAGivenDirectory(@RequestParam(value = "parentDirId", required = false) Integer parentDirId) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -102,6 +106,7 @@ public class FileController {
      * @param request a record containing the newName or the newParentId
      * @return a FileGetDTO with the new information
      */
+    @PreAuthorize("hasRole('USER')")
     @PatchMapping("/{id}")
     public FileGetDTO patchFile(@PathVariable int id, @RequestBody PatchRequest request) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -110,6 +115,7 @@ public class FileController {
         return fileService.patchFile(id, request, username);
     }
 
+    @PreAuthorize("hasRole('USER')")
     @DeleteMapping("/{id}/delete")
     public ResponseEntity<Integer> deleteFile(@PathVariable int id) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -121,8 +127,14 @@ public class FileController {
     }
   
     @GetMapping("/{fileId}/download")
-    public ResponseEntity<Resource> downloadFile(Principal principal, @PathVariable Integer fileId) {
-        Optional<File> maybeFile = fileService.getFileById(fileId);
+    public ResponseEntity<Resource> downloadFile(Principal principal, @PathVariable String fileId) {
+        Optional<Integer> maybeId = fileService.decodeDownloadId(fileId);
+
+        if (maybeId.isEmpty()) {
+            throw new DownloadNonExistingFileException("Tried to download a file with an invalid id");
+        }
+
+        Optional<File> maybeFile = fileService.getFileById(maybeId.get());
 
         if (maybeFile.isEmpty()) {
             throw new DownloadNonExistingFileException("Tried to download a file that doesn't exist");
@@ -181,6 +193,7 @@ public class FileController {
 
     // IMPORTANT Si le endpoint marche pas c'est probablement que Spring Boot n'autorise pas les requests autre que GET avec un ancien csrf token.
     // Donc quand on hit "/login" il ne faut pas oublier de redemander le nouveau csrf avec "/api/csrf"
+    @PreAuthorize("hasRole('USER')")
     @PostMapping("share/{fileId}/create")
     public ResponseEntity<Void> fileSharing(
             @PathVariable int fileId,
@@ -252,6 +265,7 @@ public class FileController {
                 .build();
     }
 
+    @PreAuthorize("hasRole('USER')")
     @GetMapping("{fileId}/visibility")
     public ResponseEntity<FileVisibilityDTO> getFileVisibility(@PathVariable int fileId) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -297,16 +311,20 @@ public class FileController {
 
     @GetMapping("{fileId}")
     public ResponseEntity<FileGetDTO> getSharedFile(
-            @PathVariable int fileId,
+            @PathVariable String fileId,
             Principal principal
     ) throws AccessOnNonExistingFileException {
-        Optional<File> maybeFile = fileService.getFileById(fileId);
+        Optional<Integer> maybeId = fileService.decodeDownloadId(fileId);
+
+        if (maybeId.isEmpty()) throw new AccessOnNonExistingFileException("Tried to get information on a file with an invalid id");
+
+        Optional<File> maybeFile = fileService.getFileById(maybeId.get());
 
         if (maybeFile.isEmpty()) throw new AccessOnNonExistingFileException("Tried to get information on a file that doesn't exist");
 
         ResponseEntity<FileGetDTO> response = ResponseEntity
                 .status(HttpStatus.OK)
-                .body(new FileGetDTO(maybeFile.get()));
+                .body(fileService.toGetDTO(maybeFile.get()));
 
         if (fileIsPublic(maybeFile.get())) {
             LOGGER.info("Returned public file dto with id: " + fileId);

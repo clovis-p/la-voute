@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -15,7 +16,6 @@ import xyz.lavoute.web.services.TurnstileService;
 import xyz.lavoute.web.services.UserService;
 
 @RestController
-@CrossOrigin
 @RequestMapping("/api/user")
 public class UserController {
     private static final Logger LOGGER = LoggerFactory.getLogger(UserController.class);
@@ -48,6 +48,7 @@ public class UserController {
      * Called whenever the frontend need information from the user (username, first and last name, profile picture)
      * @return a dto containing the user information
      */
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping("/me")
     public ResponseEntity<MeResponseDTO> getSessionUserInfo() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -57,6 +58,7 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping("/obtain-picture")
     public ResponseEntity<PictureDTO> getUserPicture() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -71,6 +73,7 @@ public class UserController {
      * @param updateProfileRequestDTO a dto containing the needed information to edit or to verify (old password, first and last name, new password)
      * @return a dto containing the new information
      */
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @PutMapping("/edit")
     public ResponseEntity<UserResponseDTO> updateProfile(@RequestBody UpdateProfileRequestDTO updateProfileRequestDTO) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -85,6 +88,7 @@ public class UserController {
      * @param picture the new picture
      * @return a dto containing only the encoded profile picture for live change on the frontend
      */
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @PatchMapping("/update-picture")
     public ResponseEntity<UpdatedProfilePicDTO> uploadProfilePicture(@RequestParam("picture") MultipartFile picture) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();

@@ -156,19 +156,9 @@ import CreateDirectoryModal from '@/components/Dashboard/CreateDirectoryModal.vu
 import RenameFileModal from '@/components/Dashboard/RenameFileModal.vue';
 import ShareFileModal from '@/components/Dashboard/ShareFileModal.vue';
 import DeleteFileModal from '@/components/Dashboard/DeleteFileModal.vue';
+import { typeIcons, resolveFileType } from '@/utils/fileType.js';
 
 const confirm = useConfirm();
-
-const typeIcons = {
-  Folder: 'pi-folder',
-  Image: 'pi-image',
-  Audio: 'pi-headphones',
-  Video: 'pi-video',
-  Archive: 'pi-box',
-  Document: 'pi-file',
-  Program: 'pi-code',
-  Other: 'pi-question-circle',
-};
 
 const files = ref([]);
 const activeDirId = ref(null);
@@ -204,42 +194,11 @@ async function obtainFiles() {
       for (const datum of res.data) {
         const fileName = datum.name;
 
-        const fileType = (() => {
-          if (datum.isDirectory) {
-            return 'Folder';
-          }
-          const ext = datum.name.match(/\.([^.]+)$/)?.[1].toLowerCase() ?? '';
-          if (/^(png|jpg|jpeg|gif|webp|svg|bmp|tiff|tif|heic|heif|avif|ico)$/.test(ext)) {
-            return 'Image';
-          }
-          if (/^(mp3|wav|flac|aac|ogg|oga|m4a|wma|opus|aiff|aif)$/.test(ext)) {
-            return 'Audio';
-          }
-          if (/^(mp4|mkv|webm|mov|avi|wmv|flv|m4v|mpg|mpeg|3gp|ogv|mts|m2ts|vob)$/.test(ext)) {
-            return 'Video';
-          }
-          if (/^(zip|tar|gz|tgz|bz2|tbz2|xz|txz|7z|rar|zst|lz|lzma|lzh|cab|iso|ar)$/.test(ext)) {
-            return 'Archive';
-          }
-          if (
-            /^(pdf|doc|docx|odt|rtf|txt|md|tex|pages|xls|xlsx|ods|csv|tsv|numbers|ppt|pptx|odp|key|epub|mobi)$/.test(
-              ext,
-            )
-          ) {
-            return 'Document';
-          }
-          if (
-            /^(js|mjs|cjs|jsx|ts|tsx|py|java|c|cc|cpp|cxx|h|hpp|cs|go|rs|rb|php|swift|kt|kts|scala|lua|pl|r|dart|sh|bash|zsh|sql|html|htm|css|scss|sass|less|vue|svelte|json|xml|yaml|yml|toml|ini|exe|msi|dmg|app|deb|rpm|apk|appimage)$/.test(
-              ext,
-            )
-          ) {
-            return 'Program';
-          }
-          return 'Other';
-        })();
+        const fileType = resolveFileType(datum);
 
         files.value.push({
           id: datum.id,
+          downloadId: datum.downloadId,
           name: fileName,
           type: fileType,
           typeSortKey: fileType === 'Folder' ? '0' : '1_' + fileType,
@@ -264,19 +223,19 @@ const fileMenuItems = computed(() => {
       icon: 'pi pi-download',
       label: 'Télécharger',
       command: () => {
-        downloadFile(activeFile.value.id);
+        downloadFile(activeFile.value.downloadId);
       },
     });
-  }
-  items.push(
-    {
+    items.push({
       icon: 'pi pi-share-alt',
       label: 'Partager',
       command: () => {
         fileToShare.value = activeFile.value;
         shareModalActive.value = true;
       },
-    },
+    });
+  }
+  items.push(
     {
       icon: 'pi pi-arrows-h',
       label: 'Déplacer',

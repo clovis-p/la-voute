@@ -13,13 +13,14 @@
         <div class="flex items-center gap-2">
           <SplitButton class="user-btn" :model="userMenuItems">
             <span class="flex items-center font-bold">
-              <Avatar :image="DefaultAvatar" />
+              <Avatar :image="avatarSrc" />
               <span class="mx-2">{{ username }}</span>
             </span>
           </SplitButton>
         </div>
       </template>
     </Toolbar>
+    <ProfileModal :visible="profileModalActive" @close="handleProfileClose" />
   </div>
 </template>
 
@@ -27,21 +28,47 @@
 import Button from 'primevue/button';
 import { Avatar, Toolbar, SplitButton } from 'primevue';
 import AppLogo from '@/assets/AppLogo.vue';
-import DefaultAvatar from '@/assets/test-images/default-pp.jpg';
+import ProfileModal from '@/components/Dashboard/ProfileModal.vue';
+import { avatarSrc as buildAvatarSrc } from '@/utils/avatar';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 
 const router = useRouter();
 
 const username = ref('');
+const profilePicture = ref(null);
+const profileModalActive = ref(false);
+
+const avatarSrc = computed(() => buildAvatarSrc(profilePicture.value));
+
+async function fetchPicture() {
+  try {
+    const res = await axios.get('/api/user/obtain-picture');
+    profilePicture.value = res.data.profilePicture;
+  } catch {
+    profilePicture.value = null;
+  }
+}
+
+function handleProfileClose() {
+  profileModalActive.value = false;
+  fetchPicture();
+}
 
 onMounted(async () => {
   const res = await axios.get('/api/user/me');
   username.value = res.data.username;
+  fetchPicture();
 });
 
 const userMenuItems = [
+  {
+    label: 'Mon profil',
+    command: function () {
+      profileModalActive.value = true;
+    },
+  },
   {
     label: 'Se déconnecter',
     command: async function () {

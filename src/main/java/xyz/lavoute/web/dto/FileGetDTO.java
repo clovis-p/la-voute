@@ -10,6 +10,7 @@ import java.time.LocalDate;
 @Setter
 public class FileGetDTO {
     private Integer id;
+    private String downloadId;
     private String name;
     private Boolean isDirectory;
     private String username;

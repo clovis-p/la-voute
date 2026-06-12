@@ -7,6 +7,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 import xyz.lavoute.web.dto.MeResponseDTO;
 import xyz.lavoute.web.dto.RegistrationRequestDTO;
 import xyz.lavoute.web.dto.UpdateProfileRequestDTO;
@@ -25,6 +26,7 @@ import static org.mockito.Mockito.when;
 // for better error messages
 @SpringBootTest
 @ActiveProfiles("test")
+@TestPropertySource("classpath:application-test.properties")
 class UserServiceTest {
     @Autowired
     UserService userService;
