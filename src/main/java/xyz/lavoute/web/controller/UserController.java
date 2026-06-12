@@ -16,7 +16,6 @@ import xyz.lavoute.web.services.TurnstileService;
 import xyz.lavoute.web.services.UserService;
 
 @RestController
-@CrossOrigin
 @RequestMapping("/api/user")
 public class UserController {
     private static final Logger LOGGER = LoggerFactory.getLogger(UserController.class);
