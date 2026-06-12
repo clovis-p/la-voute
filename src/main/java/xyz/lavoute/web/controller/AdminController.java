@@ -13,7 +13,6 @@ import xyz.lavoute.web.services.AdminService;
 import java.util.Collection;
 
 @RestController
-@CrossOrigin
 @RequestMapping("/api/admin")
 public class AdminController {
 
