@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.core.io.Resource;
 import org.springframework.http.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -64,6 +65,7 @@ public class FileController {
      * @param parentDirId the id of the parent directory, null if it's at the root
      * @return Status Accepted (202) when it worked
      */
+    @PreAuthorize("hasRole('USER')")
     @PostMapping("/upload")
     public ResponseEntity<Integer> uploadNewFile(@RequestParam("file") MultipartFile file, @RequestParam(value = "parentDirId", required = false) Integer parentDirId) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -79,6 +81,7 @@ public class FileController {
      * @param parentDirId the id of the parent directory, null if it's at the root
      * @return Status Accepted (202) when it worked
      */
+    @PreAuthorize("hasRole('USER')")
     @PostMapping("/directory")
     public ResponseEntity<Integer> createNewDirectory(@RequestParam("directoryName") String directoryName, @RequestParam(value = "parentDirId", required = false) Integer parentDirId) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -88,6 +91,7 @@ public class FileController {
         return ResponseEntity.status(HttpStatus.ACCEPTED).build();
     }
 
+    @PreAuthorize("hasRole('USER')")
     @GetMapping("/obtain")
     public Collection<FileGetDTO> obtainFilesFromAGivenDirectory(@RequestParam(value = "parentDirId", required = false) Integer parentDirId) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -102,6 +106,7 @@ public class FileController {
      * @param request a record containing the newName or the newParentId
      * @return a FileGetDTO with the new information
      */
+    @PreAuthorize("hasRole('USER')")
     @PatchMapping("/{id}")
     public FileGetDTO patchFile(@PathVariable int id, @RequestBody PatchRequest request) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -110,6 +115,7 @@ public class FileController {
         return fileService.patchFile(id, request, username);
     }
 
+    @PreAuthorize("hasRole('USER')")
     @DeleteMapping("/{id}/delete")
     public ResponseEntity<Integer> deleteFile(@PathVariable int id) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -181,6 +187,7 @@ public class FileController {
 
     // IMPORTANT Si le endpoint marche pas c'est probablement que Spring Boot n'autorise pas les requests autre que GET avec un ancien csrf token.
     // Donc quand on hit "/login" il ne faut pas oublier de redemander le nouveau csrf avec "/api/csrf"
+    @PreAuthorize("hasRole('USER')")
     @PostMapping("share/{fileId}/create")
     public ResponseEntity<Void> fileSharing(
             @PathVariable int fileId,
@@ -252,6 +259,7 @@ public class FileController {
                 .build();
     }
 
+    @PreAuthorize("hasRole('USER')")
     @GetMapping("{fileId}/visibility")
     public ResponseEntity<FileVisibilityDTO> getFileVisibility(@PathVariable int fileId) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
