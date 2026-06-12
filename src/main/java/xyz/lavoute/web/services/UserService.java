@@ -14,12 +14,23 @@ import xyz.lavoute.web.models.User;
 import xyz.lavoute.web.repositories.UserRepository;
 import xyz.lavoute.web.validation.UserValidator;
 
+import org.imgscalr.Scalr;
+
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Base64;
 import java.util.Optional;
 
+import javax.imageio.ImageIO;
+
 @Service
 public class UserService {
+    private static final int AVATAR_SIZE = 128;
+
     private final Logger logger = LoggerFactory.getLogger(UserService.class);
 
     private final UserRepository userRepository;
@@ -144,11 +155,33 @@ public class UserService {
         if (picture.getSize() > 4194304) {
             throw new ProfilePictureErrorException("La photo de profil mise en ligne est trop lourde (Maximum 4mo).");
         }
-        //Encoding the uploaded picture
-        try {
-            byte[] bytes = picture.getBytes();
-            userEntity.setProfilePic(Base64.getEncoder().encodeToString(bytes));
 
+        // Scale to a square avatar
+        try {
+            BufferedImage original = ImageIO.read(new ByteArrayInputStream(picture.getBytes()));
+            if (original == null) {
+                throw new ProfilePictureErrorException("Le fichier fourni n'est pas une image valide.");
+            }
+
+            // Crop to square
+            int smallestSide = Math.min(original.getWidth(), original.getHeight());
+            int x = (original.getWidth() - smallestSide) / 2;
+            int y = (original.getHeight() - smallestSide) / 2;
+            BufferedImage square = Scalr.crop(original, x, y, smallestSide, smallestSide);
+
+            // Scale
+            BufferedImage scaled = Scalr.resize(square, Scalr.Method.QUALITY, Scalr.Mode.FIT_EXACT, AVATAR_SIZE, AVATAR_SIZE);
+
+            // Create BufferedImage object
+            BufferedImage rgb = new BufferedImage(AVATAR_SIZE, AVATAR_SIZE, BufferedImage.TYPE_INT_RGB);
+            Graphics2D g = rgb.createGraphics();
+            g.drawImage(scaled, 0, 0, Color.WHITE, null);
+            g.dispose();
+
+            // Write base64 image from BufferedImage object
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            ImageIO.write(rgb, "jpg", out);
+            userEntity.setProfilePic(Base64.getEncoder().encodeToString(out.toByteArray()));
         } catch (IOException e) {
             throw new ProfilePictureErrorException("Le photo de profil n'a pas pu être enregistrée.");
         }
