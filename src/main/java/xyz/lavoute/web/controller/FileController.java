@@ -127,8 +127,14 @@ public class FileController {
     }
   
     @GetMapping("/{fileId}/download")
-    public ResponseEntity<Resource> downloadFile(Principal principal, @PathVariable Integer fileId) {
-        Optional<File> maybeFile = fileService.getFileById(fileId);
+    public ResponseEntity<Resource> downloadFile(Principal principal, @PathVariable String fileId) {
+        Optional<Integer> maybeId = fileService.decodeDownloadId(fileId);
+
+        if (maybeId.isEmpty()) {
+            throw new DownloadNonExistingFileException("Tried to download a file with an invalid id");
+        }
+
+        Optional<File> maybeFile = fileService.getFileById(maybeId.get());
 
         if (maybeFile.isEmpty()) {
             throw new DownloadNonExistingFileException("Tried to download a file that doesn't exist");
@@ -305,16 +311,20 @@ public class FileController {
 
     @GetMapping("{fileId}")
     public ResponseEntity<FileGetDTO> getSharedFile(
-            @PathVariable int fileId,
+            @PathVariable String fileId,
             Principal principal
     ) throws AccessOnNonExistingFileException {
-        Optional<File> maybeFile = fileService.getFileById(fileId);
+        Optional<Integer> maybeId = fileService.decodeDownloadId(fileId);
+
+        if (maybeId.isEmpty()) throw new AccessOnNonExistingFileException("Tried to get information on a file with an invalid id");
+
+        Optional<File> maybeFile = fileService.getFileById(maybeId.get());
 
         if (maybeFile.isEmpty()) throw new AccessOnNonExistingFileException("Tried to get information on a file that doesn't exist");
 
         ResponseEntity<FileGetDTO> response = ResponseEntity
                 .status(HttpStatus.OK)
-                .body(new FileGetDTO(maybeFile.get()));
+                .body(fileService.toGetDTO(maybeFile.get()));
 
         if (fileIsPublic(maybeFile.get())) {
             LOGGER.info("Returned public file dto with id: " + fileId);

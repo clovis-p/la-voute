@@ -46,6 +46,9 @@ public class FileService {
     @Value("${hashids.salt}")
     private String hashidsSalt;
 
+    @Value("${hashids.download.salt}")
+    private String downloadHashidsSalt;
+
     @Value("${app.signed-url.duration-minutes}")
     private String signedUrlValidDurationMinutes;
 
@@ -156,13 +159,13 @@ public class FileService {
 
         if (parentDir != null) {
             parentParentDir.setName("../");
-            filesDTO.add(new FileGetDTO(parentParentDir));
+            filesDTO.add(toGetDTO(parentParentDir));
         }
         for (File file : files) {
             if (file.getIsDirectory()) {
                 file.setName(file.getName() + '/');
             }
-            filesDTO.add(new FileGetDTO(file));
+            filesDTO.add(toGetDTO(file));
         }
 
         return filesDTO;
@@ -206,7 +209,7 @@ public class FileService {
 
         fileRepository.save(fileEntity);
 
-        return new FileGetDTO(fileEntity);
+        return toGetDTO(fileEntity);
     }
 
     /**
@@ -300,9 +303,56 @@ public class FileService {
      * @return the hashed id that's going to be used for the name in the storage
      */
     private String obtainHashedFileName(int id) {
-        //Renaming the file with the hash
         Hashids hashids = new Hashids(hashidsSalt, 8);
+
         return hashids.encode(id);
+    }
+
+    /**
+     * Builds a FileGetDTO with an obfuscated download id for share links
+     *
+     * @param file the file entity to convert
+     * @return the DTO with its downloadId set
+     */
+    public FileGetDTO toGetDTO(File file) {
+        FileGetDTO dto = new FileGetDTO(file);
+
+        if (file.getId() != null) {
+            dto.setDownloadId(encodeDownloadId(file.getId()));
+        }
+
+        return dto;
+    }
+
+    /**
+     * Encodes a file id with HashIDs for the downloadId field (share links)
+     * Use for downloadId only!
+     *
+     * @param id real file id
+     * @return hashed download id
+     */
+    public String encodeDownloadId(int id) {
+        Hashids hashids = new Hashids(downloadHashidsSalt, 8);
+
+        return hashids.encode(id);
+    }
+
+    /**
+     * Decodes a downloadId
+     * Use for downloadId only!
+     *
+     * @param downloadId hashed downloadId
+     * @return real file id or empty if the hash is invalid
+     */
+    public Optional<Integer> decodeDownloadId(String downloadId) {
+        Hashids hashids = new Hashids(downloadHashidsSalt, 8);
+
+        long[] decoded = hashids.decode(downloadId);
+        if (decoded.length == 0) {
+            return Optional.empty();
+        }
+
+        return Optional.of((int) decoded[0]);
     }
 
     /**
