@@ -2,6 +2,7 @@ package xyz.lavoute.web.controller;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -27,6 +28,7 @@ public class AdminController {
      * @param id the id of the user
      * @return code 200 OK if it worked
      */
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}/delete")
     public ResponseEntity<Integer> deleteUser(@PathVariable Integer id) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -40,6 +42,7 @@ public class AdminController {
      * Obtain a list of all users
      * @return code 200 OK with a list of all the users and their basic infos
      */
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/obtain")
     public Collection<UserGetDTO> getAllUsers() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
