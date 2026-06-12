@@ -2,7 +2,7 @@ name: Deploy
 
 on:
   push:
-    branches: [master]
+    branches: [deploy]
   workflow_dispatch:
 
 jobs:
@@ -11,6 +11,8 @@ jobs:
     permissions:
       contents: read
       packages: write
+    env:
+      VITE_TURNSTILE_SITE_KEY: ${{ vars.VITE_TURNSTILE_SITE_KEY }}
     steps:
       - uses: actions/checkout@v4
 
@@ -33,28 +35,39 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install cloudflared
+        run: |
+          curl -fsSL https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb -o cloudflared.deb
+          sudo dpkg -i cloudflared.deb
+
       - name: Deploy over SSH
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
-          VPS_USER: ${{ secrets.VPS_USER }}
           VPS_PATH: ${{ secrets.VPS_PATH }}
-          VPS_PORT: ${{ secrets.VPS_PORT }}
           VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
           GHCR_USER: ${{ secrets.GHCR_USER }}
           GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
         run: |
           set -euo pipefail
-          PORT="${VPS_PORT:-22}"
 
           mkdir -p ~/.ssh
           printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -p "$PORT" -H "$VPS_HOST" >> ~/.ssh/known_hosts 2>/dev/null
 
-          ssh -i ~/.ssh/deploy_key -p "$PORT" "$VPS_USER@$VPS_HOST" "mkdir -p '$VPS_PATH'"
-          scp -i ~/.ssh/deploy_key -P "$PORT" docker-compose.prod.yml "$VPS_USER@$VPS_HOST:$VPS_PATH/docker-compose.prod.yml"
+          cat > ~/.ssh/config <<EOF
+          Host $VPS_HOST
+              User host
+              IdentityFile ~/.ssh/deploy_key
+              IdentitiesOnly yes
+              StrictHostKeyChecking accept-new
+              ProxyCommand cloudflared access ssh --hostname %h
+          EOF
+          chmod 600 ~/.ssh/config
 
-          ssh -i ~/.ssh/deploy_key -p "$PORT" "$VPS_USER@$VPS_HOST" \
+          ssh "$VPS_HOST" "mkdir -p '$VPS_PATH'"
+          scp docker-compose.prod.yml "$VPS_HOST:$VPS_PATH/docker-compose.prod.yml"
+
+          ssh "$VPS_HOST" \
             "set -e && cd '$VPS_PATH' && \
              echo '$GHCR_TOKEN' | docker login ghcr.io -u '$GHCR_USER' --password-stdin && \
              docker compose -f docker-compose.prod.yml pull && \
