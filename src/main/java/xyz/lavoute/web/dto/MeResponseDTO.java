@@ -12,4 +12,5 @@ public class MeResponseDTO {
     private String username;
     private String firstName;
     private String lastName;
+    private Boolean isAdmin;
 }
