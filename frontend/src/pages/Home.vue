@@ -11,7 +11,8 @@
           content: { class: 'p-3! flex-1! min-h-0! flex! flex-col!' },
         }"
       >
-        <UserDashboardView />
+        <AdminDashboardView v-if="isAdmin" />
+        <UserDashboardView v-else-if="isAdmin === false" />
       </Panel>
     </div>
   </div>
@@ -20,5 +21,15 @@
 <script setup>
 import AppBar from '@/components/Dashboard/AppBar.vue';
 import UserDashboardView from '@/components/Dashboard/UserDashboardView.vue';
+import AdminDashboardView from '@/components/Dashboard/AdminDashboardView.vue';
 import { Panel } from 'primevue';
+import axios from 'axios';
+import { onMounted, ref } from 'vue';
+
+const isAdmin = ref(null);
+
+onMounted(async () => {
+  const res = await axios.get('/api/user/me');
+  isAdmin.value = res.data.isAdmin === true;
+});
 </script>
