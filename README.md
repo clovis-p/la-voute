@@ -1,6 +1,6 @@
 # La Voûte
 
-Monolithe Spring Boot + Vue.js.
+Spring Boot + Vue.js.
 Environnement Docker Compose.
 
 ## Mise en place de l'environnement de développement local
